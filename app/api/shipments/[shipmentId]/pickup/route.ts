@@ -1,19 +1,19 @@
 // ============================================================
-// POST /api/jobs/[jobId]/accept
+// POST /api/shipments/[shipmentId]/pickup
 // ============================================================
-// Driver accepts a delivery job (entire pickup with all drops).
+// Driver confirms they have picked up the shipment.
 // ============================================================
 
 import { db } from '@/lib/db';
 import { getUserFromRequest, generateId } from '@/lib/auth';
-import { fireJobStatusWebhook } from '@/lib/webhooks';
+import { fireShipmentStatusWebhook } from '@/lib/webhooks';
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ jobId: string }> }
+  { params }: { params: Promise<{ shipmentId: string }> }
 ) {
   try {
-    const { jobId } = await params;
+    const { shipmentId } = await params;
 
     const payload = await getUserFromRequest(request);
     if (!payload || payload.role !== 'driver') {
@@ -23,56 +23,63 @@ export async function POST(
       );
     }
 
-    // Find job
-    const job = db.deliveryJobs.findById(jobId);
-    if (!job) {
+    // Find shipment
+    const shipment = db.shipments.findById(shipmentId);
+    if (!shipment) {
       return Response.json(
-        { success: false, error: 'Job not found' },
+        { success: false, error: 'Shipment not found' },
         { status: 404 }
       );
     }
 
-    if (job.status !== 'pending') {
+    if (shipment.status !== 'accepted') {
       return Response.json(
-        { success: false, error: `Job cannot be accepted. Current status: ${job.status}` },
+        { success: false, error: `Cannot confirm pickup. Current status: ${shipment.status}` },
         { status: 400 }
       );
     }
 
-    if (job.assignedDriverId) {
+    // Verify assignment
+    const assignments = db.assignments.findByShipmentId(shipmentId);
+    const driverAssignment = assignments.find(
+      (a) => a.driverId === payload.userId && a.status === 'assigned'
+    );
+
+    if (!driverAssignment) {
       return Response.json(
-        { success: false, error: 'Job is already assigned to another driver' },
-        { status: 409 }
+        { success: false, error: 'Not authorized for this shipment' },
+        { status: 403 }
       );
     }
 
     const now = new Date().toISOString();
 
-    // Update job
-    const updatedJob = db.deliveryJobs.update(jobId, {
-      status: 'accepted',
-      assignedDriverId: payload.userId,
-      updatedAt: now,
+    // Update assignment
+    db.assignments.update(driverAssignment.id, {
+      status: 'in_progress',
     });
 
-    // Update driver status
-    db.driverProfiles.update(payload.userId, { status: 'busy' });
+    // Update shipment
+    const updatedShipment = db.shipments.update(shipmentId, {
+      status: 'picked_up',
+      updatedAt: now,
+    });
 
     // Record status history
     db.statusHistory.create({
       id: generateId('sth'),
-      jobId,
-      fromStatus: 'pending',
-      toStatus: 'accepted',
+      shipmentId,
+      fromStatus: 'accepted',
+      toStatus: 'picked_up',
       changedBy: payload.userId,
       changedAt: now,
     });
 
     // Fire webhook
-    if (updatedJob) {
+    if (updatedShipment) {
       const user = db.users.findById(payload.userId);
       const profile = db.driverProfiles.findByUserId(payload.userId);
-      fireJobStatusWebhook(updatedJob, 'job.accepted', {
+      fireShipmentStatusWebhook(updatedShipment, 'shipment.picked_up', {
         id: payload.userId,
         name: user?.fullName || '',
         vehicleNumber: profile?.vehicleNumber || '',
@@ -83,9 +90,9 @@ export async function POST(
     return Response.json({
       success: true,
       data: {
-        jobId,
-        status: 'accepted',
-        message: 'Job accepted successfully. All drops are now assigned to you.',
+        shipmentId,
+        status: 'picked_up',
+        message: 'Pickup confirmed. Proceed to drops.',
       },
     });
   } catch {

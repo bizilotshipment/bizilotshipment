@@ -26,9 +26,9 @@ export default function PlaygroundPage() {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState('');
 
-  // Create Job
-  const [jobApiKey, setJobApiKey] = useState('');
-  const [jobPickup, setJobPickup] = useState(
+  // Create Shipment
+  const [shipmentApiKey, setShipmentApiKey] = useState('');
+  const [shipmentPickup, setShipmentPickup] = useState(
     JSON.stringify(
       {
         businessName: 'ABC Mobiles',
@@ -41,7 +41,7 @@ export default function PlaygroundPage() {
       2
     )
   );
-  const [jobDrops, setJobDrops] = useState(
+  const [shipmentDrops, setShipmentDrops] = useState(
     JSON.stringify(
       [
         {
@@ -61,13 +61,13 @@ export default function PlaygroundPage() {
       2
     )
   );
-  const [jobResult, setJobResult] = useState<string | null>(null);
-  const [jobLoading, setJobLoading] = useState(false);
-  const [jobError, setJobError] = useState('');
+  const [shipmentResult, setShipmentResult] = useState<string | null>(null);
+  const [shipmentLoading, setShipmentLoading] = useState(false);
+  const [shipmentError, setShipmentError] = useState('');
 
   // Check Status
   const [statusApiKey, setStatusApiKey] = useState('');
-  const [statusJobId, setStatusJobId] = useState('');
+  const [statusShipmentId, setStatusShipmentId] = useState('');
   const [statusResult, setStatusResult] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
 
@@ -90,7 +90,7 @@ export default function PlaygroundPage() {
     setRegError('');
     setRegLoading(true);
     try {
-      const res = await fetch('/api/v1/register', {
+      const res = await fetch('/api/v1/api-clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -104,7 +104,7 @@ export default function PlaygroundPage() {
         setRegError(data.error || 'Registration failed');
       } else {
         setApiKey(data.data.apiKey);
-        setJobApiKey(data.data.apiKey);
+        setShipmentApiKey(data.data.apiKey);
         setStatusApiKey(data.data.apiKey);
       }
     } catch {
@@ -114,30 +114,30 @@ export default function PlaygroundPage() {
     }
   };
 
-  // --- Create Job ---
-  const handleCreateJob = async () => {
-    setJobError('');
-    setJobLoading(true);
+  // --- Create Shipment ---
+  const handleCreateShipment = async () => {
+    setShipmentError('');
+    setShipmentLoading(true);
     try {
-      const pickup = JSON.parse(jobPickup);
-      const drops = JSON.parse(jobDrops);
-      const res = await fetch('/api/v1/jobs', {
+      const pickup = JSON.parse(shipmentPickup);
+      const drops = JSON.parse(shipmentDrops);
+      const res = await fetch('/api/v1/shipments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${jobApiKey}`,
+          Authorization: `Bearer ${shipmentApiKey}`,
         },
         body: JSON.stringify({ pickup, drops }),
       });
       const data = await res.json();
-      setJobResult(JSON.stringify(data, null, 2));
-      if (data.success && data.data?.jobId) {
-        setStatusJobId(data.data.jobId);
+      setShipmentResult(JSON.stringify(data, null, 2));
+      if (data.success && data.data?.shipmentId) {
+        setStatusShipmentId(data.data.shipmentId);
       }
     } catch (err) {
-      setJobError(err instanceof Error ? err.message : 'Invalid JSON or request failed');
+      setShipmentError(err instanceof Error ? err.message : 'Invalid JSON or request failed');
     } finally {
-      setJobLoading(false);
+      setShipmentLoading(false);
     }
   };
 
@@ -145,7 +145,7 @@ export default function PlaygroundPage() {
   const handleCheckStatus = async () => {
     setStatusLoading(true);
     try {
-      const res = await fetch(`/api/v1/jobs/${statusJobId}/status`, {
+      const res = await fetch(`/api/v1/shipments/${statusShipmentId}/status`, {
         headers: { Authorization: `Bearer ${statusApiKey}` },
       });
       const data = await res.json();
@@ -250,7 +250,7 @@ export default function PlaygroundPage() {
           )}
         </Card>
 
-        {/* 2. Create Job */}
+        {/* 2. Create Shipment */}
         <Card className="overflow-hidden">
           <button
             onClick={() => toggleSection('create')}
@@ -258,7 +258,7 @@ export default function PlaygroundPage() {
           >
             <div className="flex items-center gap-2">
               <Send className="w-4 h-4 text-purple-400" />
-              <span className="font-semibold text-white text-sm">2. Create Delivery Job</span>
+              <span className="font-semibold text-white text-sm">2. Create Shipment</span>
             </div>
             {expandedSection === 'create' ? (
               <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -272,8 +272,8 @@ export default function PlaygroundPage() {
               <Input
                 label="API Key"
                 placeholder="dk_live_xxx"
-                value={jobApiKey}
-                onChange={(e) => setJobApiKey(e.target.value)}
+                value={shipmentApiKey}
+                onChange={(e) => setShipmentApiKey(e.target.value)}
                 className="font-mono text-xs"
               />
 
@@ -282,8 +282,8 @@ export default function PlaygroundPage() {
                   Pickup Details (JSON)
                 </label>
                 <textarea
-                  value={jobPickup}
-                  onChange={(e) => setJobPickup(e.target.value)}
+                  value={shipmentPickup}
+                  onChange={(e) => setShipmentPickup(e.target.value)}
                   className="w-full bg-surface-700 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 resize-y min-h-[120px]"
                 />
               </div>
@@ -293,30 +293,30 @@ export default function PlaygroundPage() {
                   Drops (JSON Array)
                 </label>
                 <textarea
-                  value={jobDrops}
-                  onChange={(e) => setJobDrops(e.target.value)}
+                  value={shipmentDrops}
+                  onChange={(e) => setShipmentDrops(e.target.value)}
                   className="w-full bg-surface-700 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 resize-y min-h-[160px]"
                 />
               </div>
 
-              {jobError && <p className="text-sm text-red-400">{jobError}</p>}
+              {shipmentError && <p className="text-sm text-red-400">{shipmentError}</p>}
 
               <Button
                 fullWidth
-                onClick={handleCreateJob}
-                loading={jobLoading}
-                disabled={!jobApiKey}
+                onClick={handleCreateShipment}
+                loading={shipmentLoading}
+                disabled={!shipmentApiKey}
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                Create Job
+                Create Shipment
               </Button>
 
-              {jobResult && (
+              {shipmentResult && (
                 <div className="p-3 rounded-xl bg-surface-700/50 border border-white/5">
                   <p className="text-xs text-slate-400 font-medium mb-1">Response</p>
                   <pre className="text-xs text-slate-300 font-mono overflow-x-auto whitespace-pre">
-                    {jobResult}
+                    {shipmentResult}
                   </pre>
                 </div>
               )}
@@ -332,7 +332,7 @@ export default function PlaygroundPage() {
           >
             <div className="flex items-center gap-2">
               <Eye className="w-4 h-4 text-cyan-400" />
-              <span className="font-semibold text-white text-sm">3. Check Job Status</span>
+              <span className="font-semibold text-white text-sm">3. Check Shipment Status</span>
             </div>
             {expandedSection === 'status' ? (
               <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -351,10 +351,10 @@ export default function PlaygroundPage() {
                 className="font-mono text-xs"
               />
               <Input
-                label="Job ID"
-                placeholder="job_xxx"
-                value={statusJobId}
-                onChange={(e) => setStatusJobId(e.target.value)}
+                label="Shipment ID"
+                placeholder="shp_xxx"
+                value={statusShipmentId}
+                onChange={(e) => setStatusShipmentId(e.target.value)}
                 className="font-mono text-xs"
               />
 
@@ -362,7 +362,7 @@ export default function PlaygroundPage() {
                 fullWidth
                 onClick={handleCheckStatus}
                 loading={statusLoading}
-                disabled={!statusApiKey || !statusJobId}
+                disabled={!statusApiKey || !statusShipmentId}
                 className="bg-cyan-600 hover:bg-cyan-700"
               >
                 {statusLoading ? (
@@ -394,7 +394,7 @@ export default function PlaygroundPage() {
             API Documentation →
           </Link>
           <Link
-            href="/signin"
+            href="/signin/driver"
             className="flex-1 text-center text-sm text-emerald-400 hover:text-emerald-300 py-2 rounded-xl bg-surface-700 hover:bg-surface-600 transition-colors"
           >
             Driver Login →

@@ -29,7 +29,7 @@ export default function SignInPage() {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile }),
+        body: JSON.stringify({ mobile, role: 'driver' }),
       });
       const data = await res.json();
 
@@ -38,7 +38,6 @@ export default function SignInPage() {
         return;
       }
 
-      // Show OTP in dev banner
       setDevOTP(data._dev_otp);
       setStep('otp');
     } catch {
@@ -56,7 +55,7 @@ export default function SignInPage() {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile, otp }),
+        body: JSON.stringify({ mobile, otp, role: 'driver' }),
       });
       const data = await res.json();
 
@@ -66,12 +65,7 @@ export default function SignInPage() {
         return;
       }
 
-      // Redirect based on role
-      if (data.user.role === 'driver') {
-        router.push('/dashboard/driver');
-      } else {
-        router.push('/dashboard/customer');
-      }
+      router.push('/dashboard/driver');
     } catch {
       setError('Something went wrong. Please try again.');
       setLoading(false);
@@ -85,9 +79,9 @@ export default function SignInPage() {
       <Card className="p-6">
         {step === 'mobile' ? (
           <form onSubmit={handleSendOTP}>
-            <h2 className="text-xl font-bold text-white mb-1">Welcome back</h2>
+            <h2 className="text-xl font-bold text-white mb-1">Driver Login</h2>
             <p className="text-sm text-slate-400 mb-6">
-              Enter your mobile number to sign in
+              Enter your mobile number to sign in as a driver
             </p>
 
             <Input
@@ -118,10 +112,10 @@ export default function SignInPage() {
             <p className="text-center text-sm text-slate-500 mt-6">
               Don&apos;t have an account?{' '}
               <Link
-                href="/signup"
+                href="/signup/driver"
                 className="text-brand-400 hover:text-brand-300 font-medium"
               >
-                Sign up
+                Sign up as Driver
               </Link>
             </p>
           </form>

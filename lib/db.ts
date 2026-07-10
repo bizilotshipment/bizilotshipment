@@ -11,7 +11,8 @@ import type {
   DriverProfile,
   ApiClient,
   Business,
-  DeliveryJob,
+  Shipment,
+  Assignment,
   StatusHistoryEntry,
   WebhookLog,
   OTPSession,
@@ -24,7 +25,8 @@ const customerProfiles: Map<string, CustomerProfile> = new Map();
 const driverProfiles: Map<string, DriverProfile> = new Map();
 const apiClients: Map<string, ApiClient> = new Map();
 const businesses: Map<string, Business> = new Map();
-const deliveryJobs: Map<string, DeliveryJob> = new Map();
+const shipments: Map<string, Shipment> = new Map();
+const assignments: Map<string, Assignment> = new Map();
 const statusHistory: Map<string, StatusHistoryEntry> = new Map();
 const webhookLogs: Map<string, WebhookLog> = new Map();
 const otpSessions: Map<string, OTPSession> = new Map(); // keyed by mobile
@@ -106,7 +108,7 @@ export const db = {
     create: (client: ApiClient) => createEntity(apiClients, client, client.id),
     findById: (id: string) => findById(apiClients, id),
     findByApiKey: (apiKey: string) =>
-      findMany(apiClients, (c) => c.apiKey === apiKey)[0] || null,
+      findMany(apiClients, (c) => c.apiKey === apiKey)[0] || null, // Will be updated to compare hashes in auth
     findMany: (predicate?: (c: ApiClient) => boolean) =>
       findMany(apiClients, predicate),
     update: (id: string, updates: Partial<ApiClient>) =>
@@ -125,22 +127,34 @@ export const db = {
       updateEntity(businesses, id, updates),
   },
 
-  // Delivery Jobs
-  deliveryJobs: {
-    create: (job: DeliveryJob) => createEntity(deliveryJobs, job, job.id),
-    findById: (id: string) => findById(deliveryJobs, id),
-    findMany: (predicate?: (j: DeliveryJob) => boolean) =>
-      findMany(deliveryJobs, predicate),
-    update: (id: string, updates: Partial<DeliveryJob>) =>
-      updateEntity(deliveryJobs, id, updates),
+  // Shipments
+  shipments: {
+    create: (shipment: Shipment) => createEntity(shipments, shipment, shipment.id),
+    findById: (id: string) => findById(shipments, id),
+    findMany: (predicate?: (s: Shipment) => boolean) =>
+      findMany(shipments, predicate),
+    update: (id: string, updates: Partial<Shipment>) =>
+      updateEntity(shipments, id, updates),
+  },
+
+  // Assignments
+  assignments: {
+    create: (assignment: Assignment) => createEntity(assignments, assignment, assignment.id),
+    findById: (id: string) => findById(assignments, id),
+    findByShipmentId: (shipmentId: string) =>
+      findMany(assignments, (a) => a.shipmentId === shipmentId),
+    findByDriverId: (driverId: string) =>
+      findMany(assignments, (a) => a.driverId === driverId),
+    update: (id: string, updates: Partial<Assignment>) =>
+      updateEntity(assignments, id, updates),
   },
 
   // Status History
   statusHistory: {
     create: (entry: StatusHistoryEntry) =>
       createEntity(statusHistory, entry, entry.id),
-    findByJobId: (jobId: string) =>
-      findMany(statusHistory, (s) => s.jobId === jobId),
+    findByShipmentId: (shipmentId: string) =>
+      findMany(statusHistory, (s) => s.shipmentId === shipmentId),
   },
 
   // Webhook Logs
@@ -148,8 +162,8 @@ export const db = {
     create: (log: WebhookLog) => createEntity(webhookLogs, log, log.id),
     findByApiClientId: (apiClientId: string) =>
       findMany(webhookLogs, (l) => l.apiClientId === apiClientId),
-    findByJobId: (jobId: string) =>
-      findMany(webhookLogs, (l) => l.jobId === jobId),
+    findByShipmentId: (shipmentId: string) =>
+      findMany(webhookLogs, (l) => l.shipmentId === shipmentId),
   },
 
   // OTP Sessions

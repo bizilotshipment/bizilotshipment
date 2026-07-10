@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { mobile, otp, signup } = parsed.data;
+    const { mobile, otp, role, signup } = parsed.data;
 
     // Find OTP session
     const session = db.otpSessions.findByMobile(mobile);
@@ -98,6 +98,14 @@ export async function POST(request: Request) {
         return Response.json(
           { success: false, error: 'No account found. Please sign up first.' },
           { status: 404 }
+        );
+      }
+
+      // Verify the requested role matches the user's role
+      if (user.role !== role) {
+        return Response.json(
+          { success: false, error: `Account exists, but not as a ${role}.` },
+          { status: 403 }
         );
       }
     }

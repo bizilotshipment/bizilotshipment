@@ -14,6 +14,7 @@ export const SendOTPSchema = z.object({
     .min(10, 'Mobile number must be at least 10 digits')
     .max(15, 'Mobile number is too long')
     .regex(/^\d+$/, 'Mobile number must contain only digits'),
+  role: z.enum(['customer', 'driver']),
 });
 
 export const VerifyOTPSchema = z.object({
@@ -26,6 +27,7 @@ export const VerifyOTPSchema = z.object({
     .string()
     .length(4, 'OTP must be exactly 4 digits')
     .regex(/^\d{4}$/, 'OTP must be 4 digits'),
+  role: z.enum(['customer', 'driver']),
   signup: z
     .object({
       fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -49,7 +51,7 @@ export const RegisterClientSchema = z.object({
   webhookUrl: z.string().url('Must be a valid URL').optional().nullable(),
 });
 
-// --- Delivery Job Schemas ---
+// --- Shipment Schemas ---
 
 export const PickupSchema = z.object({
   businessName: z.string().min(1, 'Business name is required'),
@@ -81,11 +83,11 @@ export const WebhookConfigSchema = z.object({
   events: z
     .array(
       z.enum([
-        'job.created',
-        'job.accepted',
-        'job.picked_up',
-        'job.out_for_delivery',
-        'job.completed',
+        'shipment.created',
+        'shipment.accepted',
+        'shipment.picked_up',
+        'shipment.out_for_delivery',
+        'shipment.completed',
       ])
     )
     .min(1, 'At least one event is required'),

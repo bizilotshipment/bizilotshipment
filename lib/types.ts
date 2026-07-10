@@ -13,7 +13,7 @@ export type DriverStatus = 'available' | 'busy' | 'offline';
 
 export type ApiClientStatus = 'active' | 'suspended';
 
-export type JobStatus =
+export type ShipmentStatus =
   | 'pending'
   | 'accepted'
   | 'picked_up'
@@ -21,11 +21,11 @@ export type JobStatus =
   | 'completed';
 
 export type WebhookEvent =
-  | 'job.created'
-  | 'job.accepted'
-  | 'job.picked_up'
-  | 'job.out_for_delivery'
-  | 'job.completed';
+  | 'shipment.created'
+  | 'shipment.accepted'
+  | 'shipment.picked_up'
+  | 'shipment.out_for_delivery'
+  | 'shipment.completed';
 
 // --- User ---
 
@@ -74,11 +74,11 @@ export interface Business {
   createdAt: string;
 }
 
-// --- Delivery Job ---
+// --- Shipment ---
 
 export interface Pickup {
   id: string;
-  jobId: string;
+  shipmentId: string;
   businessName: string;
   ownerName: string;
   fullAddress: string;
@@ -88,33 +88,44 @@ export interface Pickup {
 
 export interface Drop {
   id: string;
-  jobId: string;
+  shipmentId: string;
   customerName: string;
   completeAddress: string;
   googleMapsLink: string;
   pincode: string;
   sequenceNumber: number;
+  status: 'pending' | 'delivered' | 'failed';
 }
 
-export interface DeliveryJob {
-  id: string;
+export interface Shipment {
+  id: string; // format: shp_xxxx
+  trackingNumber: string; // format: TRK-XXXXXXX
   businessId: string;
   apiClientId: string;
-  status: JobStatus;
-  assignedDriverId: string | null;
+  status: ShipmentStatus;
   pickup: Pickup;
   drops: Drop[];
   createdAt: string;
   updatedAt: string;
 }
 
+// --- Assignment ---
+
+export interface Assignment {
+  id: string; // format: asg_xxxx
+  shipmentId: string;
+  driverId: string;
+  status: 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  assignedAt: string;
+}
+
 // --- Status History ---
 
 export interface StatusHistoryEntry {
   id: string;
-  jobId: string;
-  fromStatus: JobStatus | null; // null for initial creation
-  toStatus: JobStatus;
+  shipmentId: string;
+  fromStatus: ShipmentStatus | null; // null for initial creation
+  toStatus: ShipmentStatus;
   changedBy: string; // driverId or 'system'
   changedAt: string;
 }
@@ -124,7 +135,7 @@ export interface StatusHistoryEntry {
 export interface WebhookLog {
   id: string;
   apiClientId: string;
-  jobId: string;
+  shipmentId: string;
   event: WebhookEvent;
   payload: string; // JSON stringified
   statusCode: number | null; // null if request failed
@@ -149,8 +160,6 @@ export interface ApiResponse<T = unknown> {
   message?: string;
 }
 
-// --- Public-facing driver info (no sensitive data) ---
-
 export interface PublicDriverInfo {
   id: string;
   name: string;
@@ -158,15 +167,13 @@ export interface PublicDriverInfo {
   status: DriverStatus;
 }
 
-// --- Grouped jobs for driver dashboard ---
-
-export interface GroupedJob {
+export interface GroupedShipment {
   businessName: string;
   businessId: string;
   pickupAddress: string;
   mapLink: string;
   ownerName: string;
   pincode: string;
-  jobs: DeliveryJob[];
+  shipments: Shipment[];
   totalDrops: number;
 }

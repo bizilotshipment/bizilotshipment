@@ -1,22 +1,24 @@
 // ============================================================
 // Delivery Platform — Webhook Engine
 // ============================================================
-// Fires webhooks to API clients when job status changes.
+// Fires webhooks to API clients when shipment status changes.
 // Logs all attempts. Retry with exponential backoff.
 // ============================================================
 
 import { db } from './db';
 import { generateId } from './auth';
-import type { WebhookEvent, DeliveryJob, PublicDriverInfo } from './types';
+import type { WebhookEvent, Shipment, PublicDriverInfo } from './types';
 
 interface WebhookPayload {
   event: WebhookEvent;
-  jobId: string;
+  shipmentId: string;
+  trackingNumber: string;
   status: string;
   timestamp: string;
   data: {
-    job: {
+    shipment: {
       id: string;
+      trackingNumber: string;
       status: string;
       businessId: string;
       dropsCount: number;
@@ -28,7 +30,7 @@ interface WebhookPayload {
 export async function fireWebhook(
   apiClientId: string,
   event: WebhookEvent,
-  job: DeliveryJob,
+  shipment: Shipment,
   driver?: PublicDriverInfo
 ): Promise<void> {
   const client = db.apiClients.findById(apiClientId);
@@ -41,15 +43,17 @@ export async function fireWebhook(
 
   const payload: WebhookPayload = {
     event,
-    jobId: job.id,
-    status: job.status,
+    shipmentId: shipment.id,
+    trackingNumber: shipment.trackingNumber,
+    status: shipment.status,
     timestamp: new Date().toISOString(),
     data: {
-      job: {
-        id: job.id,
-        status: job.status,
-        businessId: job.businessId,
-        dropsCount: job.drops.length,
+      shipment: {
+        id: shipment.id,
+        trackingNumber: shipment.trackingNumber,
+        status: shipment.status,
+        businessId: shipment.businessId,
+        dropsCount: shipment.drops.length,
       },
       driver,
     },
@@ -92,7 +96,7 @@ export async function fireWebhook(
   db.webhookLogs.create({
     id: generateId('whl'),
     apiClientId,
-    jobId: job.id,
+    shipmentId: shipment.id,
     event,
     payload: payloadStr,
     statusCode,
@@ -102,10 +106,10 @@ export async function fireWebhook(
 
 // --- Fire webhook for a status change ---
 
-export async function fireJobStatusWebhook(
-  job: DeliveryJob,
+export async function fireShipmentStatusWebhook(
+  shipment: Shipment,
   event: WebhookEvent,
   driver?: PublicDriverInfo
 ): Promise<void> {
-  await fireWebhook(job.apiClientId, event, job, driver);
+  await fireWebhook(shipment.apiClientId, event, shipment, driver);
 }

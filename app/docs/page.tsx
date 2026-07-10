@@ -23,7 +23,7 @@ export default function DocsPage() {
           <h2 className="text-xl font-bold text-white mb-3">Overview</h2>
           <div className="glass rounded-xl p-4 text-sm text-slate-300 space-y-2">
             <p>
-              The Delivery Platform API lets any system create delivery jobs, track their status,
+              The Delivery Platform API lets any system create delivery shipments, track their status,
               and receive real-time webhook notifications.
             </p>
             <p>
@@ -45,7 +45,7 @@ export default function DocsPage() {
         {[
           {
             method: 'POST',
-            path: '/api/v1/register',
+            path: '/api/v1/api-clients',
             title: 'Register API Client',
             desc: 'Register your system and get an API key.',
             auth: 'None',
@@ -66,9 +66,9 @@ export default function DocsPage() {
           },
           {
             method: 'POST',
-            path: '/api/v1/jobs',
-            title: 'Create Delivery Job',
-            desc: 'Submit a new delivery job with pickup and drop locations.',
+            path: '/api/v1/shipments',
+            title: 'Create Delivery Shipment',
+            desc: 'Submit a new delivery shipment with pickup and drop locations.',
             auth: 'Bearer API Key',
             body: `{
   "pickup": {
@@ -90,7 +90,8 @@ export default function DocsPage() {
             response: `{
   "success": true,
   "data": {
-    "jobId": "job_xxx",
+    "shipmentId": "shp_xxx",
+    "trackingNumber": "TRK-XXXXX",
     "status": "pending",
     "dropsCount": 1,
     "createdAt": "2026-07-10T..."
@@ -99,15 +100,15 @@ export default function DocsPage() {
           },
           {
             method: 'GET',
-            path: '/api/v1/jobs',
-            title: 'List Jobs',
-            desc: 'List all delivery jobs for your API client. Supports filtering and pagination.',
+            path: '/api/v1/shipments',
+            title: 'List Shipments',
+            desc: 'List all delivery shipments for your API client. Supports filtering and pagination.',
             auth: 'Bearer API Key',
             body: null,
             response: `{
   "success": true,
   "data": {
-    "jobs": [...],
+    "shipments": [...],
     "total": 42,
     "page": 1,
     "limit": 20,
@@ -117,15 +118,16 @@ export default function DocsPage() {
           },
           {
             method: 'GET',
-            path: '/api/v1/jobs/:jobId/status',
-            title: 'Check Job Status',
+            path: '/api/v1/shipments/:shipmentId/status',
+            title: 'Check Shipment Status',
             desc: 'Lightweight status check ideal for polling.',
             auth: 'Bearer API Key',
             body: null,
             response: `{
   "success": true,
   "data": {
-    "jobId": "job_xxx",
+    "shipmentId": "shp_xxx",
+    "trackingNumber": "TRK-XXXXX",
     "status": "accepted",
     "driver": {
       "name": "Driver Name",
@@ -165,16 +167,16 @@ export default function DocsPage() {
             body: `{
   "webhookUrl": "https://your-system.com/webhook",
   "events": [
-    "job.accepted",
-    "job.picked_up",
-    "job.completed"
+    "shipment.accepted",
+    "shipment.picked_up",
+    "shipment.completed"
   ]
 }`,
             response: `{
   "success": true,
   "data": {
     "webhookUrl": "https://...",
-    "events": ["job.accepted", "job.picked_up", "job.completed"]
+    "events": ["shipment.accepted", "shipment.picked_up", "shipment.completed"]
   }
 }`,
           },
@@ -221,14 +223,14 @@ export default function DocsPage() {
           </section>
         ))}
 
-        {/* Job Statuses */}
+        {/* Shipment Statuses */}
         <section>
-          <h2 className="text-xl font-bold text-white mb-3">Job Status Lifecycle</h2>
+          <h2 className="text-xl font-bold text-white mb-3">Shipment Status Lifecycle</h2>
           <div className="glass rounded-xl p-4">
             <div className="space-y-2">
               {[
-                { status: 'pending', desc: 'Job created, waiting for driver', color: 'text-amber-400' },
-                { status: 'accepted', desc: 'Driver accepted the job', color: 'text-blue-400' },
+                { status: 'pending', desc: 'Shipment created, waiting for driver', color: 'text-amber-400' },
+                { status: 'accepted', desc: 'Driver accepted the shipment', color: 'text-blue-400' },
                 { status: 'picked_up', desc: 'Driver collected goods from pickup', color: 'text-purple-400' },
                 { status: 'out_for_delivery', desc: 'Driver is delivering', color: 'text-cyan-400' },
                 { status: 'completed', desc: 'All drops delivered', color: 'text-emerald-400' },
@@ -254,10 +256,10 @@ export default function DocsPage() {
           <div className="glass rounded-xl p-4">
             <div className="space-y-2 text-sm">
               {[
-                { event: 'job.created', desc: 'Fired when a new job is created' },
-                { event: 'job.accepted', desc: 'Fired when a driver accepts the job' },
-                { event: 'job.picked_up', desc: 'Fired when driver confirms pickup' },
-                { event: 'job.completed', desc: 'Fired when all drops are delivered' },
+                { event: 'shipment.created', desc: 'Fired when a new shipment is created' },
+                { event: 'shipment.accepted', desc: 'Fired when a driver accepts the shipment' },
+                { event: 'shipment.picked_up', desc: 'Fired when driver confirms pickup' },
+                { event: 'shipment.completed', desc: 'Fired when all drops are delivered' },
               ].map((e) => (
                 <div key={e.event} className="flex items-center gap-3">
                   <code className="text-xs text-brand-300 font-mono bg-surface-700 px-2 py-0.5 rounded">

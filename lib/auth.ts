@@ -2,11 +2,12 @@
 // Delivery Platform — Authentication Helpers
 // ============================================================
 // JWT token management with jose, OTP generation,
-// and API key utilities.
+// and API key utilities (including secure hashing).
 // ============================================================
 
 import { SignJWT, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
+import crypto from 'crypto';
 import type { User, UserRole } from './types';
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -74,6 +75,10 @@ export function generateApiKey(): string {
   return `dk_live_${nanoid(32)}`;
 }
 
+export function hashApiKey(apiKey: string): string {
+  return crypto.createHash('sha256').update(apiKey).digest('hex');
+}
+
 // --- Auth Extraction from Request ---
 
 export async function getUserFromRequest(
@@ -128,4 +133,14 @@ export function getApiKeyFromRequest(request: Request): string | null {
 
 export function generateId(prefix: string): string {
   return `${prefix}_${nanoid(16)}`;
+}
+
+export function generateTrackingNumber(): string {
+  // Format: TRK-XXXXXXXX (8 random uppercase alphanumeric chars)
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'TRK-';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }

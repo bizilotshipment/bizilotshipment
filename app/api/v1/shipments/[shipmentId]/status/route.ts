@@ -1,19 +1,19 @@
 // ============================================================
-// GET /api/v1/jobs/[jobId]/status
+// GET /api/v1/shipments/[shipmentId]/status
 // ============================================================
 // Lightweight status check — returns just status + timestamps.
 // Ideal for polling.
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getApiKeyFromRequest } from '@/lib/auth';
+import { getApiKeyFromRequest, hashApiKey } from '@/lib/auth';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ jobId: string }> }
+  { params }: { params: Promise<{ shipmentId: string }> }
 ) {
   try {
-    const { jobId } = await params;
+    const { shipmentId } = await params;
 
     // Authenticate
     const apiKey = getApiKeyFromRequest(request);
@@ -24,7 +24,8 @@ export async function GET(
       );
     }
 
-    const client = db.apiClients.findByApiKey(apiKey);
+    const hashedApiKey = hashApiKey(apiKey);
+    const client = db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },
@@ -32,20 +33,24 @@ export async function GET(
       );
     }
 
-    // Find job
-    const job = db.deliveryJobs.findById(jobId);
-    if (!job || job.apiClientId !== client.id) {
+    // Find shipment
+    const shipment = db.shipments.findById(shipmentId);
+    if (!shipment || shipment.apiClientId !== client.id) {
       return Response.json(
-        { success: false, error: 'Job not found' },
+        { success: false, error: 'Shipment not found' },
         { status: 404 }
       );
     }
 
     // Get driver info if assigned
     let driver = null;
-    if (job.assignedDriverId) {
-      const user = db.users.findById(job.assignedDriverId);
-      const profile = db.driverProfiles.findByUserId(job.assignedDriverId);
+    const assignments = db.assignments.findByShipmentId(shipment.id);
+    const activeAssignment = assignments.find(
+      (a) => a.status === 'assigned' || a.status === 'in_progress'
+    );
+    if (activeAssignment) {
+      const user = db.users.findById(activeAssignment.driverId);
+      const profile = db.driverProfiles.findByUserId(activeAssignment.driverId);
       if (user && profile) {
         driver = {
           name: user.fullName,
@@ -57,11 +62,12 @@ export async function GET(
     return Response.json({
       success: true,
       data: {
-        jobId: job.id,
-        status: job.status,
+        shipmentId: shipment.id,
+        trackingNumber: shipment.trackingNumber,
+        status: shipment.status,
         driver,
-        createdAt: job.createdAt,
-        updatedAt: job.updatedAt,
+        createdAt: shipment.createdAt,
+        updatedAt: shipment.updatedAt,
       },
     });
   } catch {

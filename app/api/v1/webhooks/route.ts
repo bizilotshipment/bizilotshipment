@@ -2,11 +2,11 @@
 // /api/v1/webhooks
 // ============================================================
 // PUT: Configure webhook URL and events
-// GET: /api/v1/webhooks/logs handled by separate route
+// GET: Current config and logs
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getApiKeyFromRequest } from '@/lib/auth';
+import { getApiKeyFromRequest, hashApiKey } from '@/lib/auth';
 import { WebhookConfigSchema } from '@/lib/validators';
 
 // --- PUT: Configure webhook ---
@@ -22,7 +22,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    const client = db.apiClients.findByApiKey(apiKey);
+    const hashedApiKey = hashApiKey(apiKey);
+    const client = db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },
@@ -81,7 +82,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const client = db.apiClients.findByApiKey(apiKey);
+    const hashedApiKey = hashApiKey(apiKey);
+    const client = db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },
@@ -106,9 +108,10 @@ export async function GET(request: Request) {
         recentLogs: logs.map((l) => ({
           id: l.id,
           event: l.event,
-          jobId: l.jobId,
+          shipmentId: l.shipmentId,
           statusCode: l.statusCode,
           sentAt: l.sentAt,
+          payload: JSON.parse(l.payload),
         })),
       },
     });

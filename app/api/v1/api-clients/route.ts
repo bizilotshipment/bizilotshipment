@@ -6,7 +6,7 @@
 // ============================================================
 
 import { db } from '@/lib/db';
-import { generateApiKey, generateId } from '@/lib/auth';
+import { generateApiKey, generateId, hashApiKey } from '@/lib/auth';
 import { RegisterClientSchema } from '@/lib/validators';
 
 export async function POST(request: Request) {
@@ -30,13 +30,14 @@ export async function POST(request: Request) {
 
     // Generate API key (plain text — shown once)
     const apiKey = generateApiKey();
+    const hashedApiKey = hashApiKey(apiKey);
     const clientId = generateId('cli');
 
     // Create API client
     db.apiClients.create({
       id: clientId,
       name,
-      apiKey,
+      apiKey: hashedApiKey,
       status: 'active',
       rateLimit: 60, // 60 requests per minute default
       webhookUrl: webhookUrl || null,

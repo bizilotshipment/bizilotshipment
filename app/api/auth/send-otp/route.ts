@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { mobile } = parsed.data;
+    const { mobile, role } = parsed.data;
 
     // Generate OTP
     const otp = generateOTP();

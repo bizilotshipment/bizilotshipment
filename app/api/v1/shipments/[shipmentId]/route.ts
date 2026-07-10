@@ -1,19 +1,19 @@
 // ============================================================
-// GET /api/v1/jobs/[jobId]
+// GET /api/v1/shipments/[shipmentId]
 // ============================================================
-// Returns full job details including driver info (non-sensitive).
+// Returns full shipment details including driver info (non-sensitive).
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getApiKeyFromRequest } from '@/lib/auth';
+import { getApiKeyFromRequest, hashApiKey } from '@/lib/auth';
 import type { PublicDriverInfo } from '@/lib/types';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ jobId: string }> }
+  { params }: { params: Promise<{ shipmentId: string }> }
 ) {
   try {
-    const { jobId } = await params;
+    const { shipmentId } = await params;
 
     // Authenticate
     const apiKey = getApiKeyFromRequest(request);
@@ -24,7 +24,8 @@ export async function GET(
       );
     }
 
-    const client = db.apiClients.findByApiKey(apiKey);
+    const hashedApiKey = hashApiKey(apiKey);
+    const client = db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },
@@ -32,20 +33,25 @@ export async function GET(
       );
     }
 
-    // Find job
-    const job = db.deliveryJobs.findById(jobId);
-    if (!job || job.apiClientId !== client.id) {
+    // Find shipment
+    const shipment = db.shipments.findById(shipmentId);
+    if (!shipment || shipment.apiClientId !== client.id) {
       return Response.json(
-        { success: false, error: 'Job not found' },
+        { success: false, error: 'Shipment not found' },
         { status: 404 }
       );
     }
 
-    // Get driver info (non-sensitive only)
+    // Get driver info from Assignment
     let driver: PublicDriverInfo | null = null;
-    if (job.assignedDriverId) {
-      const user = db.users.findById(job.assignedDriverId);
-      const profile = db.driverProfiles.findByUserId(job.assignedDriverId);
+    const assignments = db.assignments.findByShipmentId(shipment.id);
+    const activeAssignment = assignments.find(
+      (a) => a.status === 'assigned' || a.status === 'in_progress'
+    );
+
+    if (activeAssignment) {
+      const user = db.users.findById(activeAssignment.driverId);
+      const profile = db.driverProfiles.findByUserId(activeAssignment.driverId);
       if (user && profile) {
         driver = {
           id: user.id,
@@ -57,17 +63,18 @@ export async function GET(
     }
 
     // Get status history
-    const history = db.statusHistory.findByJobId(jobId);
+    const history = db.statusHistory.findByShipmentId(shipmentId);
 
     return Response.json({
       success: true,
       data: {
-        job: {
-          id: job.id,
-          status: job.status,
-          businessId: job.businessId,
-          pickup: job.pickup,
-          drops: job.drops,
+        shipment: {
+          id: shipment.id,
+          trackingNumber: shipment.trackingNumber,
+          status: shipment.status,
+          businessId: shipment.businessId,
+          pickup: shipment.pickup,
+          drops: shipment.drops,
           driver,
           statusHistory: history.map((h) => ({
             from: h.fromStatus,
@@ -75,8 +82,8 @@ export async function GET(
             changedBy: h.changedBy,
             changedAt: h.changedAt,
           })),
-          createdAt: job.createdAt,
-          updatedAt: job.updatedAt,
+          createdAt: shipment.createdAt,
+          updatedAt: shipment.updatedAt,
         },
       },
     });
