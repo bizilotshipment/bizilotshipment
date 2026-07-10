@@ -151,8 +151,8 @@ export function InstallAppButton({ variant = 'button', onDismiss }: InstallAppBu
   const { canInstall, isInstalled, platform, install } = usePWAInstall()
   const [showIOSSheet, setShowIOSSheet] = useState(false)
 
-  // Already installed or cannot install — hide the button
-  if (isInstalled || (!canInstall && platform !== 'ios')) {
+  // Already installed — simply hide the button (off the button)
+  if (isInstalled) {
     return null;
   }
 
