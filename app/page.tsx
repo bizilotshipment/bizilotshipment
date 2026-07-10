@@ -70,14 +70,14 @@ export default function LandingPage() {
 
               <div className="flex gap-2.5">
                 <Link
-                  href="/signin"
+                  href="/signin/customer"
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-all shadow-lg shadow-brand-600/20 active:scale-[0.98]"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   Sign In
                 </Link>
                 <Link
-                  href="/signup"
+                  href="/signup/customer"
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-600 hover:border-slate-500 bg-slate-800/50 hover:bg-slate-700/50 text-white font-semibold text-sm transition-all active:scale-[0.98]"
                 >
                   <UserPlus className="w-3.5 h-3.5" />

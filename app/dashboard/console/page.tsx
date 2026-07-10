@@ -28,7 +28,7 @@ export default function ConsoleDashboard() {
       if (data.success) {
         setUser(data.user);
       } else {
-        router.push('/signin');
+        router.push('/signin/customer');
       }
     };
     fetchUser();
@@ -37,7 +37,7 @@ export default function ConsoleDashboard() {
   const handleLogout = async () => {
     setLoggingOut(true);
     await fetch('/api/auth/me', { method: 'POST' });
-    router.push('/signin');
+    router.push('/signin/customer');
   };
 
   if (!user) {
@@ -166,7 +166,7 @@ function ShipmentsView() {
             </div>
             <ArrowRight className="w-4 h-4 text-slate-600 flex-shrink-0" />
             <div className="flex-1 truncate">
-              {s.dropsCount === 1 ? s.drops[0].customerName : 'Multiple Customers'}
+              {s.dropsCount === 1 ? (s.drops?.[0]?.customerName || '1 Customer') : 'Multiple Customers'}
             </div>
           </div>
         </Card>

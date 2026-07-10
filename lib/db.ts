@@ -1,9 +1,12 @@
 // ============================================================
-// Delivery Platform — In-Memory Data Store
+// Delivery Platform — File-Backed Data Store
 // ============================================================
-// Simple in-memory store with collections for each entity.
+// Stores data in .bizilot-db.json so it survives server restarts.
 // Will be replaced with a real database later.
 // ============================================================
+
+import fs from 'fs';
+import path from 'path';
 
 import type {
   User,
@@ -20,16 +23,62 @@ import type {
 
 // --- Collections ---
 
-const users: Map<string, User> = new Map();
-const customerProfiles: Map<string, CustomerProfile> = new Map();
-const driverProfiles: Map<string, DriverProfile> = new Map();
-const apiClients: Map<string, ApiClient> = new Map();
-const accounts: Map<string, Account> = new Map();
-const shipments: Map<string, Shipment> = new Map();
-const assignments: Map<string, Assignment> = new Map();
-const statusHistory: Map<string, StatusHistoryEntry> = new Map();
-const webhookLogs: Map<string, WebhookLog> = new Map();
-const otpSessions: Map<string, OTPSession> = new Map(); // keyed by mobile
+const DB_FILE = path.join(process.cwd(), '.bizilot-db.json');
+
+let users: Map<string, User> = new Map();
+let customerProfiles: Map<string, CustomerProfile> = new Map();
+let driverProfiles: Map<string, DriverProfile> = new Map();
+let apiClients: Map<string, ApiClient> = new Map();
+let accounts: Map<string, Account> = new Map();
+let shipments: Map<string, Shipment> = new Map();
+let assignments: Map<string, Assignment> = new Map();
+let statusHistory: Map<string, StatusHistoryEntry> = new Map();
+let webhookLogs: Map<string, WebhookLog> = new Map();
+let otpSessions: Map<string, OTPSession> = new Map();
+
+// --- Persistence ---
+
+function loadDb() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+      users = new Map(Object.entries(data.users || {}));
+      customerProfiles = new Map(Object.entries(data.customerProfiles || {}));
+      driverProfiles = new Map(Object.entries(data.driverProfiles || {}));
+      apiClients = new Map(Object.entries(data.apiClients || {}));
+      accounts = new Map(Object.entries(data.accounts || {}));
+      shipments = new Map(Object.entries(data.shipments || {}));
+      assignments = new Map(Object.entries(data.assignments || {}));
+      statusHistory = new Map(Object.entries(data.statusHistory || {}));
+      webhookLogs = new Map(Object.entries(data.webhookLogs || {}));
+      otpSessions = new Map(Object.entries(data.otpSessions || {}));
+    }
+  } catch (err) {
+    console.error('Failed to load DB:', err);
+  }
+}
+
+function persistDb() {
+  const data = {
+    users: Object.fromEntries(users),
+    customerProfiles: Object.fromEntries(customerProfiles),
+    driverProfiles: Object.fromEntries(driverProfiles),
+    apiClients: Object.fromEntries(apiClients),
+    accounts: Object.fromEntries(accounts),
+    shipments: Object.fromEntries(shipments),
+    assignments: Object.fromEntries(assignments),
+    statusHistory: Object.fromEntries(statusHistory),
+    webhookLogs: Object.fromEntries(webhookLogs),
+    otpSessions: Object.fromEntries(otpSessions),
+  };
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Failed to save DB:', err);
+  }
+}
+
+loadDb();
 
 // --- Generic CRUD helpers ---
 
@@ -39,6 +88,7 @@ function createEntity<T>(
   key: string
 ): T {
   collection.set(key, entity);
+  persistDb();
   return entity;
 }
 
@@ -63,11 +113,14 @@ function updateEntity<T>(
   if (!existing) return undefined;
   const updated = { ...existing, ...updates };
   collection.set(id, updated);
+  persistDb();
   return updated;
 }
 
 function deleteEntity<T>(collection: Map<string, T>, id: string): boolean {
-  return collection.delete(id);
+  const result = collection.delete(id);
+  if (result) persistDb();
+  return result;
 }
 
 // --- User operations ---

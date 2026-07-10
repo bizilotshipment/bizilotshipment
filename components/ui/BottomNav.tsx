@@ -28,7 +28,7 @@ export function BottomNav({ role }: BottomNavProps) {
 
   const handleLogout = async () => {
     await fetch('/api/auth/me', { method: 'POST' });
-    router.push('/signin');
+    router.push('/signin/customer');
   };
 
   return (

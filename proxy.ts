@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
           { status: 401 }
         );
       }
-      return NextResponse.redirect(new URL('/signin', request.url));
+      return NextResponse.redirect(new URL('/signin/customer', request.url));
     }
 
     const payload = await verifyToken(token);
@@ -50,7 +50,7 @@ export async function proxy(request: NextRequest) {
         );
       }
       // Clear invalid cookie and redirect
-      const response = NextResponse.redirect(new URL('/signin', request.url));
+      const response = NextResponse.redirect(new URL('/signin/customer', request.url));
       response.cookies.delete('auth-token');
       return response;
     }

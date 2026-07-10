@@ -24,13 +24,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const data = await res.json();
 
         if (!data.success) {
-          router.push('/signin');
+          router.push('/signin/customer');
           return;
         }
 
         setUser(data.user);
       } catch {
-        router.push('/signin');
+        router.push('/signin/customer');
       } finally {
         setLoading(false);
       }
