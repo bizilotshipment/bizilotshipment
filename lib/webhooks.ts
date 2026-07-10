@@ -1,0 +1,111 @@
+// ============================================================
+// Delivery Platform — Webhook Engine
+// ============================================================
+// Fires webhooks to API clients when job status changes.
+// Logs all attempts. Retry with exponential backoff.
+// ============================================================
+
+import { db } from './db';
+import { generateId } from './auth';
+import type { WebhookEvent, DeliveryJob, PublicDriverInfo } from './types';
+
+interface WebhookPayload {
+  event: WebhookEvent;
+  jobId: string;
+  status: string;
+  timestamp: string;
+  data: {
+    job: {
+      id: string;
+      status: string;
+      businessId: string;
+      dropsCount: number;
+    };
+    driver?: PublicDriverInfo;
+  };
+}
+
+export async function fireWebhook(
+  apiClientId: string,
+  event: WebhookEvent,
+  job: DeliveryJob,
+  driver?: PublicDriverInfo
+): Promise<void> {
+  const client = db.apiClients.findById(apiClientId);
+  if (!client || !client.webhookUrl) return;
+
+  // Check if client is subscribed to this event
+  if (client.webhookEvents.length > 0 && !client.webhookEvents.includes(event)) {
+    return;
+  }
+
+  const payload: WebhookPayload = {
+    event,
+    jobId: job.id,
+    status: job.status,
+    timestamp: new Date().toISOString(),
+    data: {
+      job: {
+        id: job.id,
+        status: job.status,
+        businessId: job.businessId,
+        dropsCount: job.drops.length,
+      },
+      driver,
+    },
+  };
+
+  const payloadStr = JSON.stringify(payload);
+
+  // Fire webhook with retry (3 attempts, exponential backoff)
+  let statusCode: number | null = null;
+  const maxRetries = 3;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(client.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Event': event,
+          'X-Webhook-Delivery': generateId('whd'),
+        },
+        body: payloadStr,
+        signal: AbortSignal.timeout(10000), // 10s timeout
+      });
+      statusCode = response.status;
+
+      if (response.ok) break; // Success, no retry needed
+    } catch {
+      statusCode = null; // Request failed
+    }
+
+    // Exponential backoff: 1s, 2s, 4s
+    if (attempt < maxRetries - 1) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000 * Math.pow(2, attempt))
+      );
+    }
+  }
+
+  // Log the webhook attempt
+  db.webhookLogs.create({
+    id: generateId('whl'),
+    apiClientId,
+    jobId: job.id,
+    event,
+    payload: payloadStr,
+    statusCode,
+    sentAt: new Date().toISOString(),
+  });
+}
+
+// --- Fire webhook for a status change ---
+
+export async function fireJobStatusWebhook(
+  job: DeliveryJob,
+  event: WebhookEvent,
+  driver?: PublicDriverInfo
+): Promise<void> {
+  await fireWebhook(job.apiClientId, event, job, driver);
+}
