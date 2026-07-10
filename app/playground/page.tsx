@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { AIContext } from '@/lib/ai';
 
 export default function PlaygroundPage() {
   // Registration
@@ -29,37 +30,10 @@ export default function PlaygroundPage() {
   // Create Shipment
   const [shipmentApiKey, setShipmentApiKey] = useState('');
   const [shipmentPickup, setShipmentPickup] = useState(
-    JSON.stringify(
-      {
-        businessName: 'ABC Mobiles',
-        ownerName: 'Ravi Kumar',
-        fullAddress: '123 MG Road, Bangalore',
-        mapLink: 'https://maps.google.com/',
-        pincode: '560001',
-      },
-      null,
-      2
-    )
+    JSON.stringify(AIContext.examples.createShipment.pickup, null, 2)
   );
   const [shipmentDrops, setShipmentDrops] = useState(
-    JSON.stringify(
-      [
-        {
-          customerName: 'Customer 1',
-          completeAddress: '456 Park Avenue, Bangalore',
-          googleMapsLink: 'https://maps.google.com/',
-          pincode: '560002',
-        },
-        {
-          customerName: 'Customer 2',
-          completeAddress: '789 Lake Road, Bangalore',
-          googleMapsLink: 'https://maps.google.com/',
-          pincode: '560003',
-        },
-      ],
-      null,
-      2
-    )
+    JSON.stringify(AIContext.examples.createShipment.drops, null, 2)
   );
   const [shipmentResult, setShipmentResult] = useState<string | null>(null);
   const [shipmentLoading, setShipmentLoading] = useState(false);

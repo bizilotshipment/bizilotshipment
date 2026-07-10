@@ -1,18 +1,21 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { AIContext } from '@/lib/ai';
 
 export default function DocsPage() {
+  const { platform, endpoints, events } = AIContext;
+
   return (
     <div className="min-h-dvh pb-12">
       {/* Header */}
-      <div className="glass sticky top-0 z-30">
+      <div className="glass sticky top-0 z-30 border-b border-white/5">
         <div className="mx-auto max-w-2xl px-4 py-3 flex items-center gap-3">
           <Link href="/" className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
             <ArrowLeft className="w-5 h-5 text-slate-400" />
           </Link>
           <div>
             <h1 className="text-lg font-bold text-white">API Documentation</h1>
-            <p className="text-xs text-slate-500">v1 — Delivery Platform</p>
+            <p className="text-xs text-slate-500">v{platform.version} — {platform.name}</p>
           </div>
         </div>
       </div>
@@ -22,250 +25,79 @@ export default function DocsPage() {
         <section>
           <h2 className="text-xl font-bold text-white mb-3">Overview</h2>
           <div className="glass rounded-xl p-4 text-sm text-slate-300 space-y-2">
-            <p>
-              The Delivery Platform API lets any system create delivery shipments, track their status,
-              and receive real-time webhook notifications.
-            </p>
+            <p>{platform.description}</p>
             <p>
               <strong className="text-white">Base URL:</strong>{' '}
               <code className="text-brand-300 bg-surface-700 px-2 py-0.5 rounded font-mono text-xs">
-                /api/v1
-              </code>
-            </p>
-            <p>
-              <strong className="text-white">Auth:</strong> API Key via{' '}
-              <code className="text-brand-300 bg-surface-700 px-2 py-0.5 rounded font-mono text-xs">
-                Authorization: Bearer dk_live_xxx
+                /api/{platform.apiVersion}
               </code>
             </p>
           </div>
         </section>
 
-        {/* Endpoints */}
-        {[
-          {
-            method: 'POST',
-            path: '/api/v1/api-clients',
-            title: 'Register API Client',
-            desc: 'Register your system and get an API key.',
-            auth: 'None',
-            body: `{
-  "name": "My ERP System",
-  "contactMobile": "9876543210",
-  "webhookUrl": "https://example.com/webhook"
-}`,
-            response: `{
-  "success": true,
-  "data": {
-    "clientId": "cli_xxx",
-    "apiKey": "dk_live_xxx",
-    "businessId": "bus_xxx",
-    "rateLimit": 60
-  }
-}`,
-          },
-          {
-            method: 'POST',
-            path: '/api/v1/shipments',
-            title: 'Create Delivery Shipment',
-            desc: 'Submit a new delivery shipment with pickup and drop locations.',
-            auth: 'Bearer API Key',
-            body: `{
-  "pickup": {
-    "businessName": "ABC Mobiles",
-    "ownerName": "Ravi Kumar",
-    "fullAddress": "123 MG Road, Bangalore",
-    "mapLink": "https://maps.google.com/...",
-    "pincode": "560001"
-  },
-  "drops": [
-    {
-      "customerName": "John Doe",
-      "completeAddress": "456 Park Ave, Bangalore",
-      "googleMapsLink": "https://maps.google.com/...",
-      "pincode": "560002"
-    }
-  ]
-}`,
-            response: `{
-  "success": true,
-  "data": {
-    "shipmentId": "shp_xxx",
-    "trackingNumber": "TRK-XXXXX",
-    "status": "pending",
-    "dropsCount": 1,
-    "createdAt": "2026-07-10T..."
-  }
-}`,
-          },
-          {
-            method: 'GET',
-            path: '/api/v1/shipments',
-            title: 'List Shipments',
-            desc: 'List all delivery shipments for your API client. Supports filtering and pagination.',
-            auth: 'Bearer API Key',
-            body: null,
-            response: `{
-  "success": true,
-  "data": {
-    "shipments": [...],
-    "total": 42,
-    "page": 1,
-    "limit": 20,
-    "totalPages": 3
-  }
-}`,
-          },
-          {
-            method: 'GET',
-            path: '/api/v1/shipments/:shipmentId/status',
-            title: 'Check Shipment Status',
-            desc: 'Lightweight status check ideal for polling.',
-            auth: 'Bearer API Key',
-            body: null,
-            response: `{
-  "success": true,
-  "data": {
-    "shipmentId": "shp_xxx",
-    "trackingNumber": "TRK-XXXXX",
-    "status": "accepted",
-    "driver": {
-      "name": "Driver Name",
-      "vehicleNumber": "KA01AB1234"
-    },
-    "updatedAt": "2026-07-10T..."
-  }
-}`,
-          },
-          {
-            method: 'GET',
-            path: '/api/v1/drivers',
-            title: 'List Drivers',
-            desc: 'Get list of drivers with availability status.',
-            auth: 'Bearer API Key',
-            body: null,
-            response: `{
-  "success": true,
-  "data": {
-    "drivers": [
-      {
-        "id": "usr_xxx",
-        "name": "Driver Name",
-        "vehicleNumber": "KA01AB1234",
-        "status": "available"
-      }
-    ]
-  }
-}`,
-          },
-          {
-            method: 'PUT',
-            path: '/api/v1/webhooks',
-            title: 'Configure Webhooks',
-            desc: 'Set your webhook URL and choose which events to receive.',
-            auth: 'Bearer API Key',
-            body: `{
-  "webhookUrl": "https://your-system.com/webhook",
-  "events": [
-    "shipment.accepted",
-    "shipment.picked_up",
-    "shipment.completed"
-  ]
-}`,
-            response: `{
-  "success": true,
-  "data": {
-    "webhookUrl": "https://...",
-    "events": ["shipment.accepted", "shipment.picked_up", "shipment.completed"]
-  }
-}`,
-          },
-        ].map((endpoint) => (
-          <section key={endpoint.path + endpoint.method}>
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                className={`px-2 py-0.5 rounded text-xs font-bold ${
-                  endpoint.method === 'POST'
-                    ? 'bg-emerald-500/15 text-emerald-400'
-                    : endpoint.method === 'PUT'
-                      ? 'bg-amber-500/15 text-amber-400'
-                      : 'bg-brand-500/15 text-brand-400'
-                }`}
-              >
-                {endpoint.method}
-              </span>
-              <code className="text-sm text-slate-300 font-mono">{endpoint.path}</code>
-            </div>
-            <h3 className="text-base font-semibold text-white mb-1">{endpoint.title}</h3>
-            <p className="text-sm text-slate-400 mb-3">{endpoint.desc}</p>
-
-            <div className="space-y-2">
-              <div className="text-xs text-slate-500">
-                Auth: <span className="text-slate-400">{endpoint.auth}</span>
+        {/* Dynamic Endpoints */}
+        <section className="space-y-6">
+          <h2 className="text-xl font-bold text-white mb-3">Endpoints</h2>
+          {endpoints.map((endpoint, idx) => (
+            <div key={idx} className="glass p-5 rounded-2xl">
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-bold ${
+                    endpoint.method === 'POST'
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : endpoint.method === 'PUT'
+                        ? 'bg-amber-500/15 text-amber-400'
+                        : 'bg-brand-500/15 text-brand-400'
+                  }`}
+                >
+                  {endpoint.method}
+                </span>
+                <code className="text-sm text-slate-300 font-mono">{endpoint.path}</code>
               </div>
+              <h3 className="text-base font-semibold text-white mb-1">{endpoint.title}</h3>
+              <p className="text-sm text-slate-400 mb-3">{endpoint.purpose}</p>
 
-              {endpoint.body && (
+              <div className="space-y-4">
+                <div className="text-xs text-slate-500">
+                  Auth: <span className="text-slate-400">{endpoint.auth}</span>
+                </div>
+
+                {endpoint.request && (
+                  <div>
+                    <p className="text-xs font-medium text-slate-400 mb-1">Request Payload</p>
+                    <pre className="bg-surface-900/50 rounded-xl p-3 text-xs text-slate-300 font-mono overflow-x-auto">
+                      {JSON.stringify(endpoint.request, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
                 <div>
-                  <p className="text-xs font-medium text-slate-400 mb-1">Request Body</p>
-                  <pre className="glass rounded-xl p-3 text-xs text-slate-300 font-mono overflow-x-auto whitespace-pre">
-                    {endpoint.body}
+                  <p className="text-xs font-medium text-slate-400 mb-1">Response</p>
+                  <pre className="bg-surface-900/50 rounded-xl p-3 text-xs text-slate-300 font-mono overflow-x-auto">
+                    {JSON.stringify(endpoint.response, null, 2)}
                   </pre>
                 </div>
-              )}
-
-              <div>
-                <p className="text-xs font-medium text-slate-400 mb-1">Response</p>
-                <pre className="glass rounded-xl p-3 text-xs text-slate-300 font-mono overflow-x-auto whitespace-pre">
-                  {endpoint.response}
-                </pre>
               </div>
             </div>
-          </section>
-        ))}
-
-        {/* Shipment Statuses */}
-        <section>
-          <h2 className="text-xl font-bold text-white mb-3">Shipment Status Lifecycle</h2>
-          <div className="glass rounded-xl p-4">
-            <div className="space-y-2">
-              {[
-                { status: 'pending', desc: 'Shipment created, waiting for driver', color: 'text-amber-400' },
-                { status: 'accepted', desc: 'Driver accepted the shipment', color: 'text-blue-400' },
-                { status: 'picked_up', desc: 'Driver collected goods from pickup', color: 'text-purple-400' },
-                { status: 'out_for_delivery', desc: 'Driver is delivering', color: 'text-cyan-400' },
-                { status: 'completed', desc: 'All drops delivered', color: 'text-emerald-400' },
-              ].map((s, i) => (
-                <div key={s.status} className="flex items-center gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-3 h-3 rounded-full ${s.color} bg-current`} />
-                    {i < 4 && <div className="w-0.5 h-4 bg-surface-500 mt-1" />}
-                  </div>
-                  <div className="flex-1 pb-2">
-                    <code className={`text-xs font-mono ${s.color}`}>{s.status}</code>
-                    <p className="text-xs text-slate-400">{s.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </section>
 
         {/* Webhook Events */}
         <section>
           <h2 className="text-xl font-bold text-white mb-3">Webhook Events</h2>
           <div className="glass rounded-xl p-4">
-            <div className="space-y-2 text-sm">
-              {[
-                { event: 'shipment.created', desc: 'Fired when a new shipment is created' },
-                { event: 'shipment.accepted', desc: 'Fired when a driver accepts the shipment' },
-                { event: 'shipment.picked_up', desc: 'Fired when driver confirms pickup' },
-                { event: 'shipment.completed', desc: 'Fired when all drops are delivered' },
-              ].map((e) => (
-                <div key={e.event} className="flex items-center gap-3">
-                  <code className="text-xs text-brand-300 font-mono bg-surface-700 px-2 py-0.5 rounded">
-                    {e.event}
-                  </code>
-                  <span className="text-xs text-slate-400">{e.desc}</span>
+            <div className="space-y-4 text-sm">
+              {events.map((e, idx) => (
+                <div key={idx} className="flex flex-col gap-1 border-b border-white/5 last:border-0 pb-3 last:pb-0">
+                  <div className="flex items-center gap-3">
+                    <code className="text-xs text-brand-300 font-mono bg-surface-700 px-2 py-0.5 rounded">
+                      {e.event}
+                    </code>
+                    <span className="text-xs text-slate-400">{e.description}</span>
+                  </div>
+                  <pre className="mt-2 bg-surface-900/50 rounded-xl p-3 text-xs text-slate-300 font-mono">
+                    {JSON.stringify(e.payload, null, 2)}
+                  </pre>
                 </div>
               ))}
             </div>
@@ -278,13 +110,21 @@ export default function DocsPage() {
           <p className="text-sm text-slate-400 mb-4">
             Try it out in the API Playground — no setup required.
           </p>
-          <Link
-            href="/playground"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all"
-          >
-            Open Playground
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex gap-3 justify-center">
+            <Link
+              href="/playground"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all"
+            >
+              Open Playground
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/dashboard/developer/ai-integration"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-surface-700 hover:bg-surface-600 text-white font-semibold transition-all"
+            >
+              AI Context
+            </Link>
+          </div>
         </div>
       </div>
     </div>
