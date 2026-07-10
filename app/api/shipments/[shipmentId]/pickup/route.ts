@@ -5,7 +5,7 @@
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getUserFromRequest, generateId } from '@/lib/auth';
+import { getUserFromRequest, generateId, generateOTP } from '@/lib/auth';
 import { fireShipmentStatusWebhook } from '@/lib/webhooks';
 
 export async function POST(
@@ -14,6 +14,8 @@ export async function POST(
 ) {
   try {
     const { shipmentId } = await params;
+    const body = await request.json().catch(() => ({}));
+    const { otp } = body;
 
     const payload = await getUserFromRequest(request);
     if (!payload || payload.role !== 'driver') {
@@ -39,6 +41,13 @@ export async function POST(
       );
     }
 
+    if (shipment.pickupOtp && shipment.pickupOtp !== otp) {
+      return Response.json(
+        { success: false, error: 'Invalid Pickup OTP' },
+        { status: 400 }
+      );
+    }
+
     // Verify assignment
     const assignments = db.assignments.findByShipmentId(shipmentId);
     const driverAssignment = assignments.find(
@@ -59,9 +68,16 @@ export async function POST(
       status: 'in_progress',
     });
 
+    // Generate Drop OTPs
+    const updatedDrops = shipment.drops.map(drop => ({
+      ...drop,
+      dropOtp: generateOTP()
+    }));
+
     // Update shipment
     const updatedShipment = db.shipments.update(shipmentId, {
       status: 'picked_up',
+      drops: updatedDrops,
       updatedAt: now,
     });
 

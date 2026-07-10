@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Phone, LogOut, PackagePlus, List, TerminalSquare, Sparkles, MapPin, Search, ArrowRight, Loader2, Key } from 'lucide-react';
+import { User, Phone, LogOut, PackagePlus, List, TerminalSquare, Sparkles, MapPin, Search, ArrowRight, Loader2, Key, MessageCircle, Map } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { ShipmentDetailsModal } from '@/components/ui/ShipmentDetailsModal';
 
 interface UserData {
   id: string;
@@ -77,6 +78,7 @@ function ShipmentsView() {
   const [shipments, setShipments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedShipment, setSelectedShipment] = useState<any>(null);
 
   const fetchShipments = async () => {
     setLoading(true);
@@ -132,7 +134,7 @@ function ShipmentsView() {
   return (
     <div className="space-y-4">
       {shipments.map((s) => (
-        <Card key={s.id} className="p-5 hover:border-brand-500/30 transition-colors group">
+        <Card key={s.id} className="p-5 hover:border-brand-500/30 transition-colors group" onClick={() => setSelectedShipment(s)} hover>
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -171,6 +173,14 @@ function ShipmentsView() {
           </div>
         </Card>
       ))}
+
+      {selectedShipment && (
+        <ShipmentDetailsModal 
+          shipment={selectedShipment} 
+          onClose={() => setSelectedShipment(null)} 
+          // onEdit could be implemented later by passing shipment to create view
+        />
+      )}
     </div>
   );
 }
@@ -183,8 +193,9 @@ function CreateShipmentView({ onSuccess }: { onSuccess: () => void }) {
   const [error, setError] = useState('');
   
   const [pickup, setPickup] = useState({
-    businessName: '',
+    businessName: 'Pickup', // Hidden from UI but required by API
     ownerName: '',
+    contactNumber: '',
     fullAddress: '',
     mapLink: '',
     pincode: ''
@@ -192,13 +203,27 @@ function CreateShipmentView({ onSuccess }: { onSuccess: () => void }) {
 
   const [drops, setDrops] = useState([{
     customerName: '',
+    contactNumber: '',
     completeAddress: '',
     googleMapsLink: '',
     pincode: ''
   }]);
 
+  useEffect(() => {
+    try {
+      const savedPickup = localStorage.getItem('bizilot-last-pickup');
+      if (savedPickup) setPickup(JSON.parse(savedPickup));
+      
+      const savedDrops = localStorage.getItem('bizilot-last-drops');
+      if (savedDrops) {
+        const parsedDrops = JSON.parse(savedDrops);
+        if (parsedDrops.length > 0) setDrops(parsedDrops);
+      }
+    } catch(e) {}
+  }, []);
+
   const addDrop = () => {
-    setDrops([...drops, { customerName: '', completeAddress: '', googleMapsLink: '', pincode: '' }]);
+    setDrops([...drops, { customerName: '', contactNumber: '', completeAddress: '', googleMapsLink: '', pincode: '' }]);
   };
 
   const removeDrop = (index: number) => {
@@ -215,6 +240,16 @@ function CreateShipmentView({ onSuccess }: { onSuccess: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Strict validations
+    if (pickup.contactNumber.length !== 10 || !/^\d+$/.test(pickup.contactNumber)) return setError('Pickup contact number must be exactly 10 digits.');
+    if (pickup.pincode.length !== 6 || !/^\d+$/.test(pickup.pincode)) return setError('Pickup pincode must be exactly 6 digits.');
+    
+    for (let i = 0; i < drops.length; i++) {
+      if (drops[i].contactNumber.length !== 10 || !/^\d+$/.test(drops[i].contactNumber)) return setError(`Drop #${i+1} contact number must be exactly 10 digits.`);
+      if (drops[i].pincode.length !== 6 || !/^\d+$/.test(drops[i].pincode)) return setError(`Drop #${i+1} pincode must be exactly 6 digits.`);
+    }
+
     setLoading(true);
     setError('');
 
@@ -227,6 +262,8 @@ function CreateShipmentView({ onSuccess }: { onSuccess: () => void }) {
       
       const data = await res.json();
       if (data.success) {
+        localStorage.setItem('bizilot-last-pickup', JSON.stringify(pickup));
+        localStorage.setItem('bizilot-last-drops', JSON.stringify(drops));
         onSuccess();
       } else {
         setError(data.error || 'Failed to create shipment');
@@ -238,41 +275,57 @@ function CreateShipmentView({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto relative pb-20">
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
           {error}
         </div>
       )}
 
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-brand-400" /> Pickup Details
+      <Card className="p-4">
+        <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-brand-400" /> Pickup Details
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input required type="text" placeholder="Pickup Name (e.g. My Shop)" className="input-field"
-            value={pickup.businessName} onChange={e => setPickup({...pickup, businessName: e.target.value})} />
-          <input required type="text" placeholder="Contact Person Name" className="input-field"
+        <div className="grid grid-cols-1 gap-3">
+          <input required type="text" placeholder="Contact Person Name" className="input-field py-2 text-sm"
             value={pickup.ownerName} onChange={e => setPickup({...pickup, ownerName: e.target.value})} />
-          <input required type="text" placeholder="Full Address" className="input-field md:col-span-2"
+          
+          <div className="flex gap-2">
+            <input required type="tel" maxLength={10} placeholder="Contact Number (10 digits)" className="input-field py-2 text-sm flex-1"
+              value={pickup.contactNumber} onChange={e => setPickup({...pickup, contactNumber: e.target.value.replace(/\D/g, '')})} />
+            <Button type="button" variant="outline" className="px-3" disabled={pickup.contactNumber.length !== 10} 
+              onClick={() => window.open(`https://wa.me/91${pickup.contactNumber}`, '_blank')}>
+              <MessageCircle className="w-4 h-4 text-emerald-400" />
+            </Button>
+          </div>
+
+          <input required type="text" placeholder="Full Address" className="input-field py-2 text-sm"
             value={pickup.fullAddress} onChange={e => setPickup({...pickup, fullAddress: e.target.value})} />
-          <input required type="url" placeholder="Google Maps Link" className="input-field"
-            value={pickup.mapLink} onChange={e => setPickup({...pickup, mapLink: e.target.value})} />
-          <input required type="text" placeholder="Pincode" className="input-field"
-            value={pickup.pincode} onChange={e => setPickup({...pickup, pincode: e.target.value})} />
+          
+          <div className="flex gap-2">
+            <input required type="url" placeholder="Google Maps Link" className="input-field py-2 text-sm flex-1"
+              value={pickup.mapLink} onChange={e => setPickup({...pickup, mapLink: e.target.value})} />
+            <Button type="button" variant="outline" className="px-3" 
+              onClick={() => window.open(pickup.mapLink || 'https://maps.google.com', '_blank')}>
+              <Map className="w-4 h-4 text-blue-400" />
+            </Button>
+          </div>
+
+          <input required type="text" maxLength={6} placeholder="Pincode (6 digits)" className="input-field py-2 text-sm w-1/2"
+            value={pickup.pincode} onChange={e => setPickup({...pickup, pincode: e.target.value.replace(/\D/g, '')})} />
         </div>
       </Card>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2 px-1">
-          <PackagePlus className="w-5 h-5 text-brand-400" /> Drop Locations
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-white flex items-center gap-2 px-1">
+          <PackagePlus className="w-4 h-4 text-brand-400" /> Drop Locations
         </h3>
         
         {drops.map((drop, index) => (
-          <Card key={index} className="p-6 relative overflow-hidden group">
+          <Card key={index} className="p-4 relative overflow-hidden group">
             <div className="absolute top-0 left-0 w-1 h-full bg-slate-700 group-hover:bg-brand-500 transition-colors" />
             
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-3">
               <span className="text-sm font-medium text-slate-300">Drop #{index + 1}</span>
               {drops.length > 1 && (
                 <button type="button" onClick={() => removeDrop(index)} className="text-xs text-red-400 hover:text-red-300">
@@ -281,28 +334,48 @@ function CreateShipmentView({ onSuccess }: { onSuccess: () => void }) {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input required type="text" placeholder="Customer Name" className="input-field"
+            <div className="grid grid-cols-1 gap-3">
+              <input required type="text" placeholder="Contact Person Name" className="input-field py-2 text-sm"
                 value={drop.customerName} onChange={e => updateDrop(index, 'customerName', e.target.value)} />
-              <input required type="text" placeholder="Pincode" className="input-field"
-                value={drop.pincode} onChange={e => updateDrop(index, 'pincode', e.target.value)} />
-              <input required type="text" placeholder="Complete Delivery Address" className="input-field md:col-span-2"
+              
+              <div className="flex gap-2">
+                <input required type="tel" maxLength={10} placeholder="Contact Number (10 digits)" className="input-field py-2 text-sm flex-1"
+                  value={drop.contactNumber} onChange={e => updateDrop(index, 'contactNumber', e.target.value.replace(/\D/g, ''))} />
+                <Button type="button" variant="outline" className="px-3" disabled={drop.contactNumber.length !== 10} 
+                  onClick={() => window.open(`https://wa.me/91${drop.contactNumber}`, '_blank')}>
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                </Button>
+              </div>
+
+              <input required type="text" placeholder="Complete Delivery Address" className="input-field py-2 text-sm"
                 value={drop.completeAddress} onChange={e => updateDrop(index, 'completeAddress', e.target.value)} />
-              <input required type="url" placeholder="Google Maps Link" className="input-field md:col-span-2"
-                value={drop.googleMapsLink} onChange={e => updateDrop(index, 'googleMapsLink', e.target.value)} />
+              
+              <div className="flex gap-2">
+                <input required type="url" placeholder="Google Maps Link" className="input-field py-2 text-sm flex-1"
+                  value={drop.googleMapsLink} onChange={e => updateDrop(index, 'googleMapsLink', e.target.value)} />
+                <Button type="button" variant="outline" className="px-3" 
+                  onClick={() => window.open(drop.googleMapsLink || 'https://maps.google.com', '_blank')}>
+                  <Map className="w-4 h-4 text-blue-400" />
+                </Button>
+              </div>
+
+              <input required type="text" maxLength={6} placeholder="Pincode (6 digits)" className="input-field py-2 text-sm w-1/2"
+                value={drop.pincode} onChange={e => updateDrop(index, 'pincode', e.target.value.replace(/\D/g, ''))} />
             </div>
           </Card>
         ))}
 
-        <Button type="button" variant="outline" fullWidth onClick={addDrop} className="border-dashed py-6 text-slate-400 hover:text-white">
-          + Add Another Drop Location
+        <Button type="button" variant="outline" fullWidth onClick={addDrop} className="border-dashed py-4 text-sm text-slate-400 hover:text-white">
+          + Add Another Drop
         </Button>
       </div>
 
-      <div className="pt-4">
-        <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
-          Create Shipment
-        </Button>
+      <div className="fixed bottom-0 left-0 w-full p-4 bg-surface-900/90 backdrop-blur-md border-t border-slate-800 z-10 flex justify-center">
+        <div className="w-full max-w-md">
+          <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
+            Create Shipment
+          </Button>
+        </div>
       </div>
     </form>
   );

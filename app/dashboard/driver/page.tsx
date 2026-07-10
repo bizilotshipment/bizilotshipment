@@ -15,6 +15,8 @@ import {
   LogOut,
   RefreshCw,
   ClipboardList,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -65,6 +67,10 @@ export default function DriverDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedShipment, setExpandedShipment] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
+  const [deliveryModal, setDeliveryModal] = useState<{ shipmentId: string; dropIndex: number; otp: string } | null>(null);
+  const [failureReasons, setFailureReasons] = useState<string[]>([]);
+  const [deliveryError, setDeliveryError] = useState('');
 
   const fetchShipments = useCallback(async () => {
     try {
@@ -107,29 +113,71 @@ export default function DriverDashboard() {
     }
   };
 
-  const handlePickup = async (shipmentId: string) => {
+  const handlePickup = async (shipmentId: string, otp: string) => {
     setActionLoading(shipmentId);
     try {
-      const res = await fetch(`/api/shipments/${shipmentId}/pickup`, { method: 'POST' });
+      const res = await fetch(`/api/shipments/${shipmentId}/pickup`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp })
+      });
       const data = await res.json();
-      if (data.success) await fetchShipments();
+      if (data.success) {
+        await fetchShipments();
+        setOtpInputs(prev => ({...prev, [shipmentId]: ''}));
+      } else {
+        alert(data.error);
+        setOtpInputs(prev => ({...prev, [shipmentId]: ''}));
+      }
     } catch {
-      // handle error
+      alert('Network error');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleComplete = async (shipmentId: string) => {
-    setActionLoading(shipmentId);
+  const handleComplete = async () => {
+    if (!deliveryModal) return;
+    if (failureReasons.length === 0) return setDeliveryError('Please select at least one outcome.');
+    
+    setActionLoading('complete');
+    setDeliveryError('');
     try {
-      const res = await fetch(`/api/shipments/${shipmentId}/complete`, { method: 'POST' });
+      const res = await fetch(`/api/shipments/${deliveryModal.shipmentId}/complete`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dropIndex: deliveryModal.dropIndex, otp: deliveryModal.otp, failureReasons })
+      });
       const data = await res.json();
-      if (data.success) await fetchShipments();
+      if (data.success) {
+        setDeliveryModal(null);
+        setFailureReasons([]);
+        setOtpInputs(prev => ({...prev, [`${deliveryModal.shipmentId}-${deliveryModal.dropIndex}`]: ''}));
+        await fetchShipments();
+      } else {
+        setDeliveryError(data.error || 'Failed to complete delivery');
+      }
     } catch {
-      // handle error
+      setDeliveryError('Network error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handlePickupOtpChange = (shipmentId: string, val: string) => {
+    const clean = val.replace(/\D/g, '');
+    setOtpInputs(prev => ({...prev, [shipmentId]: clean}));
+    if (clean.length === 4) {
+      handlePickup(shipmentId, clean);
+    }
+  };
+
+  const handleDropOtpChange = (shipmentId: string, dropIndex: number, val: string) => {
+    const clean = val.replace(/\D/g, '');
+    const key = `${shipmentId}-${dropIndex}`;
+    setOtpInputs(prev => ({...prev, [key]: clean}));
+    if (clean.length === 4) {
+      setDeliveryModal({ shipmentId, dropIndex, otp: clean });
     }
   };
 
@@ -290,28 +338,45 @@ export default function DriverDashboard() {
                 {expandedShipment === shipment.id && (
                   <div className="mt-2 space-y-2 animate-slide-up">
                     {shipment.drops.map((drop, i) => (
-                      <div key={drop.id} className="flex items-start gap-2 p-2 rounded-lg bg-surface-700/30">
-                        <div className="w-5 h-5 rounded-full bg-emerald-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-[10px] font-bold text-emerald-400">{i + 1}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white">{drop.customerName}</p>
-                          <p className="text-xs text-slate-400 truncate">{drop.completeAddress}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-slate-500">{drop.pincode}</span>
-                            {drop.googleMapsLink && (
-                              <a
-                                href={drop.googleMapsLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[10px] text-brand-400"
-                              >
-                                <Navigation className="w-2.5 h-2.5" />
-                                Map
-                              </a>
-                            )}
+                      <div key={drop.id} className="flex flex-col gap-2 p-2 rounded-lg bg-surface-700/30">
+                        <div className="flex items-start gap-2">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${drop.status === 'delivered' ? 'bg-emerald-600/20 text-emerald-400' : drop.status === 'pending' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
+                            {drop.status === 'delivered' ? <CheckCircle className="w-3 h-3" /> : drop.status === 'pending' ? <span className="text-[10px] font-bold">{i + 1}</span> : <AlertTriangle className="w-3 h-3" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white">{drop.customerName}</p>
+                            <p className="text-xs text-slate-400 truncate">{drop.completeAddress}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] text-slate-500">{drop.pincode}</span>
+                              {drop.googleMapsLink && (
+                                <a
+                                  href={drop.googleMapsLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] text-brand-400"
+                                >
+                                  <Navigation className="w-2.5 h-2.5" />
+                                  Map
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
+
+                        {drop.status === 'pending' && shipment.status !== 'accepted' && (
+                          <div className="mt-1 flex flex-col gap-1.5 pl-7 border-t border-slate-700/30 pt-2">
+                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Verify Delivery OTP</p>
+                            <input
+                              type="text"
+                              maxLength={4}
+                              placeholder="XXXX"
+                              className="input-field text-center tracking-widest text-sm py-1.5"
+                              value={otpInputs[`${shipment.id}-${i}`] || ''}
+                              onChange={(e) => handleDropOtpChange(shipment.id, i, e.target.value)}
+                              disabled={actionLoading === 'complete' && deliveryModal?.dropIndex === i}
+                            />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -320,28 +385,18 @@ export default function DriverDashboard() {
                 {/* Action button */}
                 <div className="mt-3">
                   {shipment.status === 'accepted' && (
-                    <Button
-                      fullWidth
-                      size="lg"
-                      onClick={() => handlePickup(shipment.id)}
-                      loading={actionLoading === shipment.id}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      Confirm Pickup
-                    </Button>
-                  )}
-                  {(shipment.status === 'picked_up' || shipment.status === 'out_for_delivery') && (
-                    <Button
-                      fullWidth
-                      size="lg"
-                      onClick={() => handleComplete(shipment.id)}
-                      loading={actionLoading === shipment.id}
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Complete Delivery
-                    </Button>
+                    <div className="flex flex-col gap-2 p-3 bg-surface-700/50 rounded-lg border border-purple-500/20">
+                      <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider text-center">Verify Pickup OTP</p>
+                      <input
+                        type="text"
+                        maxLength={4}
+                        placeholder="XXXX"
+                        className="input-field text-center tracking-widest text-lg py-2"
+                        value={otpInputs[shipment.id] || ''}
+                        onChange={(e) => handlePickupOtpChange(shipment.id, e.target.value)}
+                        disabled={actionLoading === shipment.id}
+                      />
+                    </div>
                   )}
                 </div>
               </Card>
@@ -417,6 +472,65 @@ export default function DriverDashboard() {
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </Button>
+        </div>
+      )}
+
+      {/* Delivery Completion Modal */}
+      {deliveryModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setDeliveryModal(null)}>
+          <div className="bg-surface-900 border border-slate-800 rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl relative animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-bold text-white">Complete Delivery</h3>
+              <button onClick={() => setDeliveryModal(null)} className="p-1 hover:bg-slate-800 rounded-full text-slate-400">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              <div>
+                <p className="text-sm text-slate-300 font-medium mb-3">Delivery Outcome</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Successful', 'Damaged', 'Missing Product', 'Wrong Product', 'Not Sealed'].map(reason => (
+                    <label key={reason} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                      failureReasons.includes(reason) 
+                        ? 'border-brand-500 bg-brand-500/10 text-brand-400' 
+                        : 'border-slate-700 bg-surface-800 text-slate-400 hover:border-slate-600'
+                    }`}>
+                      <input 
+                        type="checkbox" 
+                        className="hidden"
+                        checked={failureReasons.includes(reason)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            if (reason === 'Successful') setFailureReasons(['Successful']);
+                            else setFailureReasons(prev => [...prev.filter(r => r !== 'Successful'), reason]);
+                          } else {
+                            setFailureReasons(prev => prev.filter(r => r !== reason));
+                          }
+                        }}
+                      />
+                      <span className="text-xs font-medium">{reason}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {deliveryError && (
+                <div className="p-2 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                  {deliveryError}
+                </div>
+              )}
+
+              <Button 
+                fullWidth 
+                onClick={handleComplete}
+                loading={actionLoading === 'complete'}
+                disabled={failureReasons.length === 0}
+              >
+                Submit Delivery
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@
 // Delivery Platform — File-Backed Data Store
 // ============================================================
 // Stores data in .bizilot-db.json so it survives server restarts.
-// Will be replaced with a real database later.
+// Reads synchronously to prevent stale data across Next.js isolates.
 // ============================================================
 
 import fs from 'fs';
@@ -21,209 +21,194 @@ import type {
   OTPSession,
 } from './types';
 
-// --- Collections ---
-
 const DB_FILE = path.join(process.cwd(), '.bizilot-db.json');
-
-let users: Map<string, User> = new Map();
-let customerProfiles: Map<string, CustomerProfile> = new Map();
-let driverProfiles: Map<string, DriverProfile> = new Map();
-let apiClients: Map<string, ApiClient> = new Map();
-let accounts: Map<string, Account> = new Map();
-let shipments: Map<string, Shipment> = new Map();
-let assignments: Map<string, Assignment> = new Map();
-let statusHistory: Map<string, StatusHistoryEntry> = new Map();
-let webhookLogs: Map<string, WebhookLog> = new Map();
-let otpSessions: Map<string, OTPSession> = new Map();
 
 // --- Persistence ---
 
-function loadDb() {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-      users = new Map(Object.entries(data.users || {}));
-      customerProfiles = new Map(Object.entries(data.customerProfiles || {}));
-      driverProfiles = new Map(Object.entries(data.driverProfiles || {}));
-      apiClients = new Map(Object.entries(data.apiClients || {}));
-      accounts = new Map(Object.entries(data.accounts || {}));
-      shipments = new Map(Object.entries(data.shipments || {}));
-      assignments = new Map(Object.entries(data.assignments || {}));
-      statusHistory = new Map(Object.entries(data.statusHistory || {}));
-      webhookLogs = new Map(Object.entries(data.webhookLogs || {}));
-      otpSessions = new Map(Object.entries(data.otpSessions || {}));
-    }
-  } catch (err) {
-    console.error('Failed to load DB:', err);
-  }
+interface DbData {
+  users: Record<string, User>;
+  customerProfiles: Record<string, CustomerProfile>;
+  driverProfiles: Record<string, DriverProfile>;
+  apiClients: Record<string, ApiClient>;
+  accounts: Record<string, Account>;
+  shipments: Record<string, Shipment>;
+  assignments: Record<string, Assignment>;
+  statusHistory: Record<string, StatusHistoryEntry>;
+  webhookLogs: Record<string, WebhookLog>;
+  otpSessions: Record<string, OTPSession>;
+  [key: string]: any;
 }
 
-function persistDb() {
-  const data = {
-    users: Object.fromEntries(users),
-    customerProfiles: Object.fromEntries(customerProfiles),
-    driverProfiles: Object.fromEntries(driverProfiles),
-    apiClients: Object.fromEntries(apiClients),
-    accounts: Object.fromEntries(accounts),
-    shipments: Object.fromEntries(shipments),
-    assignments: Object.fromEntries(assignments),
-    statusHistory: Object.fromEntries(statusHistory),
-    webhookLogs: Object.fromEntries(webhookLogs),
-    otpSessions: Object.fromEntries(otpSessions),
-  };
+const defaultData: DbData = {
+  users: {},
+  customerProfiles: {},
+  driverProfiles: {},
+  apiClients: {},
+  accounts: {},
+  shipments: {},
+  assignments: {},
+  statusHistory: {},
+  webhookLogs: {},
+  otpSessions: {},
+};
+
+function readData(): DbData {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    }
+  } catch (err) {
+    console.error('Failed to read DB file:', err);
+  }
+  return { ...defaultData };
+}
+
+function writeData(data: DbData) {
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
   } catch (err) {
-    console.error('Failed to save DB:', err);
+    console.error('Failed to write DB file:', err);
   }
 }
 
-loadDb();
-
 // --- Generic CRUD helpers ---
 
-function createEntity<T>(
-  collection: Map<string, T>,
-  entity: T,
-  key: string
-): T {
-  collection.set(key, entity);
-  persistDb();
+function createEntity<T>(collectionName: string, entity: T, key: string): T {
+  const data = readData();
+  if (!data[collectionName]) data[collectionName] = {};
+  data[collectionName][key] = entity;
+  writeData(data);
   return entity;
 }
 
-function findById<T>(collection: Map<string, T>, id: string): T | undefined {
-  return collection.get(id);
+function findById<T>(collectionName: string, id: string): T | undefined {
+  return readData()[collectionName]?.[id];
 }
 
-function findMany<T>(
-  collection: Map<string, T>,
-  predicate?: (item: T) => boolean
-): T[] {
-  const all = Array.from(collection.values());
+function findMany<T>(collectionName: string, predicate?: (item: T) => boolean): T[] {
+  const all = Object.values(readData()[collectionName] || {}) as T[];
   return predicate ? all.filter(predicate) : all;
 }
 
-function updateEntity<T>(
-  collection: Map<string, T>,
-  id: string,
-  updates: Partial<T>
-): T | undefined {
-  const existing = collection.get(id);
+function updateEntity<T>(collectionName: string, id: string, updates: Partial<T>): T | undefined {
+  const data = readData();
+  const existing = data[collectionName]?.[id];
   if (!existing) return undefined;
   const updated = { ...existing, ...updates };
-  collection.set(id, updated);
-  persistDb();
+  data[collectionName][id] = updated;
+  writeData(data);
   return updated;
 }
 
-function deleteEntity<T>(collection: Map<string, T>, id: string): boolean {
-  const result = collection.delete(id);
-  if (result) persistDb();
-  return result;
+function deleteEntity(collectionName: string, id: string): boolean {
+  const data = readData();
+  if (!data[collectionName]?.[id]) return false;
+  delete data[collectionName][id];
+  writeData(data);
+  return true;
 }
 
-// --- User operations ---
+// --- Collections ---
 
 export const db = {
   // Users
   users: {
-    create: (user: User) => createEntity(users, user, user.id),
-    findById: (id: string) => findById(users, id),
+    create: (user: User) => createEntity('users', user, user.id),
+    findById: (id: string) => findById<User>('users', id),
     findByMobile: (mobile: string) =>
-      findMany(users, (u) => u.mobile === mobile)[0] || null,
-    findMany: (predicate?: (u: User) => boolean) => findMany(users, predicate),
+      findMany<User>('users', (u) => u.mobile === mobile)[0] || null,
+    findMany: (predicate?: (u: User) => boolean) => findMany<User>('users', predicate),
     update: (id: string, updates: Partial<User>) =>
-      updateEntity(users, id, updates),
-    delete: (id: string) => deleteEntity(users, id),
+      updateEntity<User>('users', id, updates),
+    delete: (id: string) => deleteEntity('users', id),
   },
 
   // Customer Profiles
   customerProfiles: {
     create: (profile: CustomerProfile) =>
-      createEntity(customerProfiles, profile, profile.userId),
-    findByUserId: (userId: string) => findById(customerProfiles, userId),
+      createEntity('customerProfiles', profile, profile.userId),
+    findByUserId: (userId: string) => findById<CustomerProfile>('customerProfiles', userId),
   },
 
   // Driver Profiles
   driverProfiles: {
     create: (profile: DriverProfile) =>
-      createEntity(driverProfiles, profile, profile.userId),
-    findByUserId: (userId: string) => findById(driverProfiles, userId),
+      createEntity('driverProfiles', profile, profile.userId),
+    findByUserId: (userId: string) => findById<DriverProfile>('driverProfiles', userId),
     findMany: (predicate?: (p: DriverProfile) => boolean) =>
-      findMany(driverProfiles, predicate),
+      findMany<DriverProfile>('driverProfiles', predicate),
     update: (userId: string, updates: Partial<DriverProfile>) =>
-      updateEntity(driverProfiles, userId, updates),
+      updateEntity<DriverProfile>('driverProfiles', userId, updates),
   },
 
   // API Clients
   apiClients: {
-    create: (client: ApiClient) => createEntity(apiClients, client, client.id),
-    findById: (id: string) => findById(apiClients, id),
+    create: (client: ApiClient) => createEntity('apiClients', client, client.id),
+    findById: (id: string) => findById<ApiClient>('apiClients', id),
     findByApiKey: (apiKey: string) =>
-      findMany(apiClients, (c) => c.apiKey === apiKey)[0] || null, // Will be updated to compare hashes in auth
+      findMany<ApiClient>('apiClients', (c) => c.apiKey === apiKey)[0] || null,
     findMany: (predicate?: (c: ApiClient) => boolean) =>
-      findMany(apiClients, predicate),
+      findMany<ApiClient>('apiClients', predicate),
     update: (id: string, updates: Partial<ApiClient>) =>
-      updateEntity(apiClients, id, updates),
+      updateEntity<ApiClient>('apiClients', id, updates),
   },
 
   // Accounts
   accounts: {
-    create: (account: Account) => createEntity(accounts, account, account.id),
-    findById: (id: string) => findById(accounts, id),
+    create: (account: Account) => createEntity('accounts', account, account.id),
+    findById: (id: string) => findById<Account>('accounts', id),
     findByUserId: (userId: string) =>
-      findMany(accounts, (a) => a.userId === userId),
+      findMany<Account>('accounts', (a) => a.userId === userId),
     findMany: (predicate?: (a: Account) => boolean) =>
-      findMany(accounts, predicate),
+      findMany<Account>('accounts', predicate),
     update: (id: string, updates: Partial<Account>) =>
-      updateEntity(accounts, id, updates),
+      updateEntity<Account>('accounts', id, updates),
   },
 
   // Shipments
   shipments: {
-    create: (shipment: Shipment) => createEntity(shipments, shipment, shipment.id),
-    findById: (id: string) => findById(shipments, id),
+    create: (shipment: Shipment) => createEntity('shipments', shipment, shipment.id),
+    findById: (id: string) => findById<Shipment>('shipments', id),
     findMany: (predicate?: (s: Shipment) => boolean) =>
-      findMany(shipments, predicate),
+      findMany<Shipment>('shipments', predicate),
     update: (id: string, updates: Partial<Shipment>) =>
-      updateEntity(shipments, id, updates),
+      updateEntity<Shipment>('shipments', id, updates),
   },
 
   // Assignments
   assignments: {
-    create: (assignment: Assignment) => createEntity(assignments, assignment, assignment.id),
-    findById: (id: string) => findById(assignments, id),
+    create: (assignment: Assignment) => createEntity('assignments', assignment, assignment.id),
+    findById: (id: string) => findById<Assignment>('assignments', id),
     findByShipmentId: (shipmentId: string) =>
-      findMany(assignments, (a) => a.shipmentId === shipmentId),
+      findMany<Assignment>('assignments', (a) => a.shipmentId === shipmentId),
     findByDriverId: (driverId: string) =>
-      findMany(assignments, (a) => a.driverId === driverId),
+      findMany<Assignment>('assignments', (a) => a.driverId === driverId),
     update: (id: string, updates: Partial<Assignment>) =>
-      updateEntity(assignments, id, updates),
+      updateEntity<Assignment>('assignments', id, updates),
   },
 
   // Status History
   statusHistory: {
     create: (entry: StatusHistoryEntry) =>
-      createEntity(statusHistory, entry, entry.id),
+      createEntity('statusHistory', entry, entry.id),
     findByShipmentId: (shipmentId: string) =>
-      findMany(statusHistory, (s) => s.shipmentId === shipmentId),
+      findMany<StatusHistoryEntry>('statusHistory', (s) => s.shipmentId === shipmentId),
   },
 
   // Webhook Logs
   webhookLogs: {
-    create: (log: WebhookLog) => createEntity(webhookLogs, log, log.id),
+    create: (log: WebhookLog) => createEntity('webhookLogs', log, log.id),
     findByApiClientId: (apiClientId: string) =>
-      findMany(webhookLogs, (l) => l.apiClientId === apiClientId),
+      findMany<WebhookLog>('webhookLogs', (l) => l.apiClientId === apiClientId),
     findByShipmentId: (shipmentId: string) =>
-      findMany(webhookLogs, (l) => l.shipmentId === shipmentId),
+      findMany<WebhookLog>('webhookLogs', (l) => l.shipmentId === shipmentId),
   },
 
   // OTP Sessions
   otpSessions: {
     create: (session: OTPSession) =>
-      createEntity(otpSessions, session, session.mobile),
-    findByMobile: (mobile: string) => findById(otpSessions, mobile),
-    delete: (mobile: string) => deleteEntity(otpSessions, mobile),
+      createEntity('otpSessions', session, session.mobile),
+    findByMobile: (mobile: string) => findById<OTPSession>('otpSessions', mobile),
+    delete: (mobile: string) => deleteEntity('otpSessions', mobile),
   },
 };

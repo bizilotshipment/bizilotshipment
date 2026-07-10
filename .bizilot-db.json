@@ -1,0 +1,126 @@
+{
+  "users": {
+    "usr_ptGiA8iJ5LwYjlFd": {
+      "id": "usr_ptGiA8iJ5LwYjlFd",
+      "fullName": "Sufeyan",
+      "mobile": "9346772962",
+      "role": "driver",
+      "createdAt": "2026-07-10T22:08:46.791Z"
+    },
+    "usr_-wzuKAfuTf5yGoz9": {
+      "id": "usr_-wzuKAfuTf5yGoz9",
+      "fullName": "Rizwan",
+      "mobile": "9010961870",
+      "role": "customer",
+      "createdAt": "2026-07-10T22:09:40.040Z"
+    }
+  },
+  "customerProfiles": {
+    "usr_-wzuKAfuTf5yGoz9": {
+      "userId": "usr_-wzuKAfuTf5yGoz9"
+    }
+  },
+  "driverProfiles": {
+    "usr_ptGiA8iJ5LwYjlFd": {
+      "userId": "usr_ptGiA8iJ5LwYjlFd",
+      "vehicleNumber": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "panNumber": "FFFFFFFFFF",
+      "aadharNumber": "111111111111",
+      "status": "available"
+    }
+  },
+  "apiClients": {},
+  "accounts": {
+    "acc_VFIbtpH1eM2qVsFd": {
+      "id": "acc_VFIbtpH1eM2qVsFd",
+      "name": "Sufeyan",
+      "type": "personal",
+      "userId": "usr_ptGiA8iJ5LwYjlFd",
+      "createdAt": "2026-07-10T22:08:46.794Z"
+    },
+    "acc_3RyU7Jt1z7IsBqYY": {
+      "id": "acc_3RyU7Jt1z7IsBqYY",
+      "name": "Rizwan",
+      "type": "personal",
+      "userId": "usr_-wzuKAfuTf5yGoz9",
+      "createdAt": "2026-07-10T22:09:40.042Z"
+    }
+  },
+  "shipments": {
+    "shp_qTGLS07n2GZzEycl": {
+      "id": "shp_qTGLS07n2GZzEycl",
+      "trackingNumber": "TRK-56HVT43H",
+      "accountId": "acc_3RyU7Jt1z7IsBqYY",
+      "apiClientId": null,
+      "status": "completed",
+      "pickup": {
+        "id": "pck_y9izJm7ggRfS4WC3",
+        "shipmentId": "shp_qTGLS07n2GZzEycl",
+        "businessName": "dfsdf",
+        "ownerName": "dfdfd",
+        "fullAddress": "dfdfd",
+        "mapLink": "https://chatgpt.com/c/6a4da291-016c-83ee-b898-e370617ea38",
+        "pincode": "dfdfd"
+      },
+      "drops": [
+        {
+          "id": "drp_Qct8NCHGZncuwOu5",
+          "shipmentId": "shp_qTGLS07n2GZzEycl",
+          "customerName": "dfdf",
+          "completeAddress": "dfdf",
+          "googleMapsLink": "https://chatgpt.com/c/6a4da291-016c-83ee-b898-e370617ea38",
+          "pincode": "dfdf",
+          "sequenceNumber": 1,
+          "status": "delivered"
+        }
+      ],
+      "createdAt": "2026-07-10T22:22:53.921Z",
+      "updatedAt": "2026-07-10T22:31:54.539Z"
+    }
+  },
+  "assignments": {
+    "asg_1SUWojTbaYEAzbZh": {
+      "id": "asg_1SUWojTbaYEAzbZh",
+      "shipmentId": "shp_qTGLS07n2GZzEycl",
+      "driverId": "usr_ptGiA8iJ5LwYjlFd",
+      "status": "completed",
+      "assignedAt": "2026-07-10T22:25:22.432Z"
+    }
+  },
+  "statusHistory": {
+    "sth_fjRl6NP7zyvBbvk0": {
+      "id": "sth_fjRl6NP7zyvBbvk0",
+      "shipmentId": "shp_qTGLS07n2GZzEycl",
+      "fromStatus": null,
+      "toStatus": "pending",
+      "changedBy": "system",
+      "changedAt": "2026-07-10T22:22:53.921Z"
+    },
+    "sth_4Oeco8nIFkfQ4dw8": {
+      "id": "sth_4Oeco8nIFkfQ4dw8",
+      "shipmentId": "shp_qTGLS07n2GZzEycl",
+      "fromStatus": "pending",
+      "toStatus": "accepted",
+      "changedBy": "usr_ptGiA8iJ5LwYjlFd",
+      "changedAt": "2026-07-10T22:25:22.432Z"
+    },
+    "sth_gP1vd0PduTYORxs8": {
+      "id": "sth_gP1vd0PduTYORxs8",
+      "shipmentId": "shp_qTGLS07n2GZzEycl",
+      "fromStatus": "accepted",
+      "toStatus": "picked_up",
+      "changedBy": "usr_ptGiA8iJ5LwYjlFd",
+      "changedAt": "2026-07-10T22:25:44.336Z"
+    },
+    "sth_dih8kFgNyFywAqLi": {
+      "id": "sth_dih8kFgNyFywAqLi",
+      "shipmentId": "shp_qTGLS07n2GZzEycl",
+      "fromStatus": "picked_up",
+      "toStatus": "completed",
+      "changedBy": "usr_ptGiA8iJ5LwYjlFd",
+      "changedAt": "2026-07-10T22:31:54.539Z"
+    }
+  },
+  "webhookLogs": {},
+  "otpSessions": {}
+}

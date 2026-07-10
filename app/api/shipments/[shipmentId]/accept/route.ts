@@ -5,7 +5,7 @@
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getUserFromRequest, generateId } from '@/lib/auth';
+import { getUserFromRequest, generateId, generateOTP } from '@/lib/auth';
 import { fireShipmentStatusWebhook } from '@/lib/webhooks';
 
 export async function POST(
@@ -59,9 +59,12 @@ export async function POST(
       assignedAt: now,
     });
 
+    const pickupOtp = generateOTP();
+
     // Update shipment status
     const updatedShipment = db.shipments.update(shipmentId, {
       status: 'accepted',
+      pickupOtp,
       updatedAt: now,
     });
 

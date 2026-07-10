@@ -83,6 +83,7 @@ export interface Pickup {
   shipmentId: string;
   businessName: string; // Kept as string for legacy naming, but represents pickup location name
   ownerName: string;
+  contactNumber: string;
   fullAddress: string;
   mapLink: string;
   pincode: string;
@@ -92,11 +93,14 @@ export interface Drop {
   id: string;
   shipmentId: string;
   customerName: string;
+  contactNumber: string;
   completeAddress: string;
   googleMapsLink: string;
   pincode: string;
   sequenceNumber: number;
   status: 'pending' | 'delivered' | 'failed';
+  dropOtp?: string;
+  failureReasons?: string[]; // e.g. ['Damaged', 'Missing Product']
 }
 
 export interface Shipment {
@@ -105,6 +109,7 @@ export interface Shipment {
   accountId: string;
   apiClientId: string | null; // null if created manually via the Console UI
   status: ShipmentStatus;
+  pickupOtp?: string;
   pickup: Pickup;
   drops: Drop[];
   createdAt: string;

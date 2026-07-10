@@ -22,6 +22,16 @@ export async function POST(
         { status: 401 }
       );
     }
+    
+    const body = await request.json().catch(() => ({}));
+    const { dropIndex, otp, failureReasons } = body;
+
+    if (dropIndex === undefined || !otp || !failureReasons || failureReasons.length === 0) {
+      return Response.json(
+        { success: false, error: 'Missing required drop completion data (dropIndex, otp, failureReasons)' },
+        { status: 400 }
+      );
+    }
 
     // Find shipment
     const shipment = db.shipments.findById(shipmentId);
@@ -53,57 +63,72 @@ export async function POST(
       );
     }
 
+    const targetDrop = shipment.drops[dropIndex];
+    if (!targetDrop) {
+      return Response.json({ success: false, error: 'Drop not found' }, { status: 404 });
+    }
+
+    if (targetDrop.status !== 'pending') {
+      return Response.json({ success: false, error: 'Drop already completed' }, { status: 400 });
+    }
+
+    if (targetDrop.dropOtp && targetDrop.dropOtp !== otp) {
+      return Response.json({ success: false, error: 'Invalid Drop OTP' }, { status: 400 });
+    }
+
     const now = new Date().toISOString();
 
-    // Mark all drops as delivered (simplified logic, you could have a separate drop API)
-    const updatedDrops = shipment.drops.map((drop) => ({
-      ...drop,
-      status: 'delivered' as const,
-    }));
+    const isSuccessful = failureReasons.includes('Successful') && failureReasons.length === 1;
+    
+    const updatedDrops = [...shipment.drops];
+    updatedDrops[dropIndex] = {
+      ...targetDrop,
+      status: isSuccessful ? 'delivered' : 'failed',
+      failureReasons,
+    };
 
-    // Update assignment
-    db.assignments.update(driverAssignment.id, {
-      status: 'completed',
-    });
+    const allCompleted = updatedDrops.every(d => d.status !== 'pending');
 
     // Update shipment
     const updatedShipment = db.shipments.update(shipmentId, {
-      status: 'completed',
+      status: allCompleted ? 'completed' : 'out_for_delivery',
       drops: updatedDrops,
       updatedAt: now,
     });
 
-    // Mark driver as available again
-    db.driverProfiles.update(payload.userId, { status: 'available' });
-
-    // Record status history
-    db.statusHistory.create({
-      id: generateId('sth'),
-      shipmentId,
-      fromStatus: shipment.status,
-      toStatus: 'completed',
-      changedBy: payload.userId,
-      changedAt: now,
-    });
-
-    // Fire webhook
-    if (updatedShipment) {
-      const user = db.users.findById(payload.userId);
-      const profile = db.driverProfiles.findByUserId(payload.userId);
-      fireShipmentStatusWebhook(updatedShipment, 'shipment.completed', {
-        id: payload.userId,
-        name: user?.fullName || '',
-        vehicleNumber: profile?.vehicleNumber || '',
-        status: 'available',
+    if (allCompleted) {
+      db.assignments.update(driverAssignment.id, {
+        status: 'completed',
       });
+      db.driverProfiles.update(payload.userId, { status: 'available' });
+
+      db.statusHistory.create({
+        id: generateId('sth'),
+        shipmentId,
+        fromStatus: shipment.status,
+        toStatus: 'completed',
+        changedBy: payload.userId,
+        changedAt: now,
+      });
+
+      if (updatedShipment) {
+        const user = db.users.findById(payload.userId);
+        const profile = db.driverProfiles.findByUserId(payload.userId);
+        fireShipmentStatusWebhook(updatedShipment, 'shipment.completed', {
+          id: payload.userId,
+          name: user?.fullName || '',
+          vehicleNumber: profile?.vehicleNumber || '',
+          status: 'available',
+        });
+      }
     }
 
     return Response.json({
       success: true,
       data: {
         shipmentId,
-        status: 'completed',
-        message: 'Shipment completed successfully.',
+        status: allCompleted ? 'completed' : 'out_for_delivery',
+        message: allCompleted ? 'Shipment fully completed.' : 'Drop completed successfully.',
       },
     });
   } catch {

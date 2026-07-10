@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { LogIn, UserPlus, Truck, Store, Zap, Globe, ShieldCheck } from 'lucide-react';
 import { BizilotLogo } from '@/components/ui/BizilotLogo';
+import { InstallAppButton } from '@/components/ui/InstallAppButton';
 
 export default function LandingPage() {
   return (
@@ -9,9 +10,12 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-slate-800/60 bg-surface-900/80 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <BizilotLogo variant="icon" height={32} />
-          <Link href="/docs" className="text-xs text-slate-400 hover:text-white transition-colors font-medium">
-            Developer API &rarr;
-          </Link>
+          <div className="flex items-center gap-4">
+            <InstallAppButton />
+            <Link href="/docs" className="text-xs text-slate-400 hover:text-white transition-colors font-medium">
+              Developer API &rarr;
+            </Link>
+          </div>
         </div>
       </nav>
 

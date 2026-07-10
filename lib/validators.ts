@@ -56,16 +56,18 @@ export const RegisterClientSchema = z.object({
 export const PickupSchema = z.object({
   businessName: z.string().min(1, 'Business name is required'),
   ownerName: z.string().min(1, 'Owner name is required'),
+  contactNumber: z.string().min(10, 'Contact number must be at least 10 digits'),
   fullAddress: z.string().min(1, 'Full address is required'),
   mapLink: z.string().min(1, 'Map link is required'),
-  pincode: z.string().min(1, 'Pincode is required'),
+  pincode: z.string().min(6).max(6, 'Pincode must be 6 digits'),
 });
 
 export const DropSchema = z.object({
   customerName: z.string().min(1, 'Customer name is required'),
+  contactNumber: z.string().min(10, 'Contact number must be at least 10 digits'),
   completeAddress: z.string().min(1, 'Complete address is required'),
   googleMapsLink: z.string().min(1, 'Google Maps link is required'),
-  pincode: z.string().min(1, 'Pincode is required'),
+  pincode: z.string().min(6).max(6, 'Pincode must be 6 digits'),
 });
 
 export const CreateJobSchema = z.object({
