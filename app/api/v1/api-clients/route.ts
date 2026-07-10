@@ -2,7 +2,7 @@
 // POST /api/v1/register
 // ============================================================
 // Register as an API client and get an API key.
-// Auto-creates a default Business for the client.
+// Auto-creates a default Account for the client.
 // ============================================================
 
 import { db } from '@/lib/db';
@@ -33,10 +33,21 @@ export async function POST(request: Request) {
     const hashedApiKey = hashApiKey(apiKey);
     const clientId = generateId('cli');
 
+    // Auto-create a default account for this client
+    const accountId = generateId('acc');
+    db.accounts.create({
+      id: accountId,
+      name,
+      type: 'integration',
+      userId: null,
+      createdAt: new Date().toISOString(),
+    });
+
     // Create API client
     db.apiClients.create({
       id: clientId,
       name,
+      accountId,
       apiKey: hashedApiKey,
       status: 'active',
       rateLimit: 60, // 60 requests per minute default
@@ -46,24 +57,13 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     });
 
-    // Auto-create a default business for this client
-    const businessId = generateId('bus');
-    db.businesses.create({
-      id: businessId,
-      name,
-      phone: contactMobile,
-      address: '',
-      apiClientId: clientId,
-      createdAt: new Date().toISOString(),
-    });
-
     return Response.json(
       {
         success: true,
         data: {
           clientId,
           apiKey, // ⚠️ Show only once — client must store this securely
-          businessId,
+          accountId,
           rateLimit: 60,
           message:
             'Store your API key securely. It will not be shown again.',

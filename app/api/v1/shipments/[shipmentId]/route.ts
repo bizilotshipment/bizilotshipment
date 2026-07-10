@@ -72,7 +72,7 @@ export async function GET(
           id: shipment.id,
           trackingNumber: shipment.trackingNumber,
           status: shipment.status,
-          businessId: shipment.businessId,
+          accountId: shipment.accountId,
           pickup: shipment.pickup,
           drops: shipment.drops,
           driver,

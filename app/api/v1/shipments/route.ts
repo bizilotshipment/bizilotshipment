@@ -6,37 +6,52 @@
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getApiKeyFromRequest, generateId, hashApiKey, generateTrackingNumber } from '@/lib/auth';
+import { getApiKeyFromRequest, generateId, hashApiKey, generateTrackingNumber, getUserFromRequest } from '@/lib/auth';
 import { CreateJobSchema, JobListQuerySchema } from '@/lib/validators';
 import { fireShipmentStatusWebhook } from '@/lib/webhooks';
 import type { NextRequest } from 'next/server';
 
-// --- Authenticate API client ---
-function authenticateClient(request: Request) {
+// --- Authenticate Account (Dual Auth) ---
+async function authenticateAccount(request: Request) {
+  // 1. Try API Key
   const apiKey = getApiKeyFromRequest(request);
-  if (!apiKey) return null;
-  const hashed = hashApiKey(apiKey);
-  return db.apiClients.findByApiKey(hashed);
+  if (apiKey) {
+    const hashed = hashApiKey(apiKey);
+    const client = db.apiClients.findByApiKey(hashed);
+    if (!client) return { error: 'Invalid API key', status: 401 };
+    if (client.status !== 'active') return { error: 'API client is suspended', status: 403 };
+    
+    const account = db.accounts.findById(client.accountId);
+    if (!account) return { error: 'Account not found for this client', status: 404 };
+    
+    return { account, apiClientId: client.id };
+  }
+
+  // 2. Try JWT Cookie (Manual UI Client)
+  const user = await getUserFromRequest(request);
+  if (user) {
+    const accounts = db.accounts.findByUserId(user.userId);
+    if (accounts.length === 0) return { error: 'No account associated with this user', status: 404 };
+    
+    // For manual console users, apiClientId is explicitly null
+    return { account: accounts[0], apiClientId: null };
+  }
+
+  return { error: 'Unauthorized. Missing API Key or Session.', status: 401 };
 }
 
 // --- POST: Create shipment ---
 
 export async function POST(request: Request) {
   try {
-    const client = authenticateClient(request);
-    if (!client) {
+    const authResult = await authenticateAccount(request);
+    if (authResult.error || !authResult.account) {
       return Response.json(
-        { success: false, error: 'Invalid or missing API key' },
-        { status: 401 }
+        { success: false, error: authResult.error },
+        { status: authResult.status }
       );
     }
-
-    if (client.status !== 'active') {
-      return Response.json(
-        { success: false, error: 'API client is suspended' },
-        { status: 403 }
-      );
-    }
+    const { account, apiClientId } = authResult;
 
     const body = await request.json();
 
@@ -53,24 +68,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const { businessId, pickup, drops } = parsed.data;
+    const { accountId, pickup, drops } = parsed.data;
 
-    // Resolve business
-    let resolvedBusinessId = businessId;
-    if (!resolvedBusinessId) {
-      const businesses = db.businesses.findByApiClientId(client.id);
-      if (businesses.length === 0) {
-        return Response.json(
-          { success: false, error: 'No business found for this client. Contact support.' },
-          { status: 400 }
-        );
-      }
-      resolvedBusinessId = businesses[0].id;
+    // Resolve account (If the payload specifies an account ID, verify it belongs to this authenticated account context)
+    let resolvedAccountId = accountId;
+    if (!resolvedAccountId) {
+      resolvedAccountId = account.id;
     } else {
-      const business = db.businesses.findById(resolvedBusinessId);
-      if (!business || business.apiClientId !== client.id) {
+      if (account.id !== resolvedAccountId) {
         return Response.json(
-          { success: false, error: 'Business not found or does not belong to this client' },
+          { success: false, error: 'Account not found or does not belong to this token' },
           { status: 404 }
         );
       }
@@ -84,8 +91,8 @@ export async function POST(request: Request) {
     const shipment = db.shipments.create({
       id: shipmentId,
       trackingNumber,
-      businessId: resolvedBusinessId,
-      apiClientId: client.id,
+      accountId: resolvedAccountId,
+      apiClientId: apiClientId, // Can be null if manual UI user
       status: 'pending',
       pickup: {
         id: generateId('pck'),
@@ -130,7 +137,7 @@ export async function POST(request: Request) {
           shipmentId: shipment.id,
           trackingNumber: shipment.trackingNumber,
           status: shipment.status,
-          businessId: shipment.businessId,
+          accountId: shipment.accountId,
           dropsCount: shipment.drops.length,
           createdAt: shipment.createdAt,
         },
@@ -149,13 +156,14 @@ export async function POST(request: Request) {
 
 export async function GET(request: NextRequest) {
   try {
-    const client = authenticateClient(request);
-    if (!client) {
+    const authResult = await authenticateAccount(request);
+    if (authResult.error || !authResult.account) {
       return Response.json(
-        { success: false, error: 'Invalid or missing API key' },
-        { status: 401 }
+        { success: false, error: authResult.error },
+        { status: authResult.status }
       );
     }
+    const { account } = authResult;
 
     const searchParams = request.nextUrl.searchParams;
     const query = JobListQuerySchema.safeParse({
@@ -173,7 +181,10 @@ export async function GET(request: NextRequest) {
 
     const { status, page, limit } = query.data;
 
-    let shipments = db.shipments.findMany((s) => s.apiClientId === client.id);
+    // Filter shipments belonging to this account
+    let shipments = db.shipments.findMany(
+      (s) => s.accountId === account.id
+    );
 
     if (status) {
       shipments = shipments.filter((s) => s.status === status);
@@ -194,7 +205,7 @@ export async function GET(request: NextRequest) {
           id: s.id,
           trackingNumber: s.trackingNumber,
           status: s.status,
-          businessId: s.businessId,
+          accountId: s.accountId,
           pickup: {
             businessName: s.pickup.businessName,
             ownerName: s.pickup.ownerName,

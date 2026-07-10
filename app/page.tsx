@@ -1,175 +1,142 @@
 import Link from 'next/link';
-import { ArrowRight, Truck, Zap, Shield, Code2, Webhook } from 'lucide-react';
+import { LogIn, UserPlus, Truck, Store, Zap, Globe, ShieldCheck } from 'lucide-react';
+import { BizilotLogo } from '@/components/ui/BizilotLogo';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-dvh">
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-600/10 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-brand-600/8 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="relative mx-auto max-w-md px-4 pt-12 pb-16">
-          {/* Logo */}
-          <div className="flex items-center gap-2 mb-12">
-            <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center">
-              <span className="text-lg">🚚</span>
-            </div>
-            <span className="text-lg font-bold text-white">Delivery</span>
-          </div>
-
-          {/* Hero text */}
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-4">
-            Connect Your System.{' '}
-            <span className="gradient-text">Deliver Anywhere.</span>
-          </h1>
-
-          <p className="text-base text-slate-400 mb-8 leading-relaxed">
-            A universal delivery API. Any system — ERP, ecommerce, custom software — can 
-            send delivery jobs and track drivers in real-time. One integration, unlimited deliveries.
-          </p>
-
-          {/* CTAs */}
-          <div className="flex flex-col gap-3">
-            <Link
-              href="/playground"
-              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-base transition-all shadow-lg shadow-brand-600/20 active:scale-[0.98]"
-            >
-              <Code2 className="w-5 h-5" />
-              Get Your API Key
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-
-            <Link
-              href="/signin"
-              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-surface-700 hover:bg-surface-600 text-white font-medium text-base transition-all active:scale-[0.98]"
-            >
-              <Truck className="w-5 h-5" />
-              Sign In as Driver
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="mx-auto max-w-md px-4 pb-16">
-        <h2 className="text-xl font-bold text-white mb-6">How It Works</h2>
-
-        <div className="space-y-4">
-          {[
-            {
-              step: '1',
-              title: 'Register your system',
-              desc: 'Get an API key in seconds. No approval needed.',
-              gradient: 'from-brand-500/20 to-brand-600/20',
-              textColor: 'text-brand-400',
-            },
-            {
-              step: '2',
-              title: 'Send delivery jobs',
-              desc: 'POST pickup + drops to our API. We handle the rest.',
-              gradient: 'from-purple-500/20 to-purple-600/20',
-              textColor: 'text-purple-400',
-            },
-            {
-              step: '3',
-              title: 'Driver accepts & delivers',
-              desc: 'Drivers see jobs, accept, pickup, and deliver.',
-              gradient: 'from-emerald-500/20 to-emerald-600/20',
-              textColor: 'text-emerald-400',
-            },
-            {
-              step: '4',
-              title: 'Track in real-time',
-              desc: 'Get status via polling or webhooks. Simple.',
-              gradient: 'from-cyan-500/20 to-cyan-600/20',
-              textColor: 'text-cyan-400',
-            },
-          ].map((item) => (
-            <div key={item.step} className="glass rounded-xl p-4 flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0`}>
-                <span className={`text-sm font-bold ${item.textColor}`}>{item.step}</span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-white text-sm">{item.title}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="mx-auto max-w-md px-4 pb-16">
-        <h2 className="text-xl font-bold text-white mb-6">Why Choose Us</h2>
-
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { icon: Zap, label: 'Instant Setup', desc: 'API key in 30 seconds', color: 'text-amber-400', bg: 'bg-amber-500/10' },
-            { icon: Shield, label: 'Secure', desc: 'API key + JWT auth', color: 'text-brand-400', bg: 'bg-brand-500/10' },
-            { icon: Code2, label: 'API First', desc: 'RESTful, versioned', color: 'text-purple-400', bg: 'bg-purple-500/10' },
-            { icon: Webhook, label: 'Webhooks', desc: 'Real-time updates', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-          ].map((feat) => (
-            <div key={feat.label} className="glass rounded-xl p-4">
-              <div className={`w-9 h-9 rounded-lg ${feat.bg} flex items-center justify-center mb-2.5`}>
-                <feat.icon className={`w-4.5 h-4.5 ${feat.color}`} />
-              </div>
-              <h3 className="font-semibold text-white text-sm">{feat.label}</h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">{feat.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Code Preview */}
-      <section className="mx-auto max-w-md px-4 pb-16">
-        <h2 className="text-xl font-bold text-white mb-4">Simple Integration</h2>
-        <div className="glass rounded-xl p-4 font-mono text-xs overflow-x-auto">
-          <div className="text-slate-500 mb-2"># Create a delivery job</div>
-          <div>
-            <span className="text-emerald-400">POST</span>{' '}
-            <span className="text-slate-300">/api/v1/jobs</span>
-          </div>
-          <div className="text-slate-500 mt-2">Authorization: Bearer dk_live_xxx</div>
-          <div className="mt-2 text-slate-300">{'{'}</div>
-          <div className="text-slate-300 pl-4">
-            <span className="text-brand-300">&quot;pickup&quot;</span>: {'{'} <span className="text-amber-300">&quot;businessName&quot;</span>: <span className="text-emerald-300">&quot;ABC Store&quot;</span> {'}'},
-          </div>
-          <div className="text-slate-300 pl-4">
-            <span className="text-brand-300">&quot;drops&quot;</span>: [{'{'} <span className="text-amber-300">&quot;customerName&quot;</span>: <span className="text-emerald-300">&quot;John&quot;</span> {'}'}]
-          </div>
-          <div className="text-slate-300">{'}'}</div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="mx-auto max-w-md px-4 pb-12">
-        <div className="glass rounded-2xl p-6 text-center gradient-border">
-          <h3 className="text-lg font-bold text-white mb-2">Ready to get started?</h3>
-          <p className="text-sm text-slate-400 mb-4">
-            Get your API key and start delivering in minutes.
-          </p>
-          <Link
-            href="/playground"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all shadow-lg shadow-brand-600/20"
-          >
-            Try the API Playground
-            <ArrowRight className="w-4 h-4" />
+    <div className="min-h-dvh flex flex-col">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 border-b border-slate-800/60 bg-surface-900/80 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <BizilotLogo variant="icon" height={32} />
+          <Link href="/docs" className="text-xs text-slate-400 hover:text-white transition-colors font-medium">
+            Developer API &rarr;
           </Link>
         </div>
-      </section>
+      </nav>
 
-      {/* Footer */}
-      <footer className="mx-auto max-w-md px-4 py-6 border-t border-white/5">
-        <div className="flex items-center justify-between text-xs text-slate-600">
-          <span>Delivery Platform</span>
-          <div className="flex gap-4">
-            <Link href="/docs" className="hover:text-slate-400">API Docs</Link>
-            <Link href="/playground" className="hover:text-slate-400">Playground</Link>
+      {/* Hero */}
+      <section className="relative overflow-hidden flex-1 flex flex-col justify-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-600/8 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-600/6 rounded-full blur-[140px] pointer-events-none" />
+
+        <div className="relative mx-auto max-w-5xl px-4 py-16 text-center">
+          {/* Logo */}
+          <div className="flex justify-center mb-10">
+            <BizilotLogo variant="full" height={130} linked={false} />
+          </div>
+
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-5">
+            One platform for every delivery.
+          </h1>
+          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto mb-6 leading-relaxed">
+            Bizilot Shipment connects <span className="text-white font-medium">local shops, businesses, and apps</span> to 
+            a live network of drivers — through a simple dashboard or a powerful API.
+          </p>
+
+          {/* Two-liner badges */}
+          <div className="flex flex-wrap justify-center gap-3 mb-14 text-xs font-medium">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400">
+              <Store className="w-3.5 h-3.5" /> Shop & Parcel Bookings
+            </span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <Truck className="w-3.5 h-3.5" /> Live Driver Network
+            </span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">
+              <Globe className="w-3.5 h-3.5" /> ERP / POS / Shopify API
+            </span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <Zap className="w-3.5 h-3.5" /> Real-time Tracking
+            </span>
+          </div>
+
+          {/* Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl mx-auto text-left">
+
+            {/* Customers / Shops */}
+            <div className="glass rounded-2xl p-7 border border-slate-700/50 hover:border-brand-500/30 transition-colors relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-brand-500 to-purple-500" />
+
+              <div className="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center mb-5">
+                <Store className="w-5 h-5 text-brand-400" />
+              </div>
+
+              <h2 className="text-lg font-bold text-white mb-1">Customers & Shops</h2>
+              <p className="text-sm text-slate-400 mb-7 leading-relaxed">
+                Book a delivery, manage multiple drops, and track your packages — all from a simple web dashboard. 
+                No technical knowledge needed.
+              </p>
+
+              <div className="flex gap-2.5">
+                <Link
+                  href="/signin"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-all shadow-lg shadow-brand-600/20 active:scale-[0.98]"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-600 hover:border-slate-500 bg-slate-800/50 hover:bg-slate-700/50 text-white font-semibold text-sm transition-all active:scale-[0.98]"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Sign Up
+                </Link>
+              </div>
+            </div>
+
+            {/* Drivers */}
+            <div className="glass rounded-2xl p-7 border border-slate-700/50 hover:border-emerald-500/30 transition-colors relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-cyan-500" />
+
+              <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-5">
+                <Truck className="w-5 h-5 text-emerald-400" />
+              </div>
+
+              <h2 className="text-lg font-bold text-white mb-1">Delivery Drivers</h2>
+              <p className="text-sm text-slate-400 mb-7 leading-relaxed">
+                See available shipments in your area, accept jobs, get pickup and drop directions, and track your 
+                earnings — all from the driver dashboard.
+              </p>
+
+              <div className="flex gap-2.5">
+                <Link
+                  href="/signin/driver"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup/driver"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-600 hover:border-slate-500 bg-slate-800/50 hover:bg-slate-700/50 text-white font-semibold text-sm transition-all active:scale-[0.98]"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Sign Up
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Platform integration strip */}
+          <div className="mt-16 pt-10 border-t border-slate-800/60">
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-6 font-semibold">
+              Also available for systems & developers
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 text-xs text-slate-400 mb-8">
+              {['Shopify', 'WooCommerce', 'ERP Systems', 'POS Software', 'Custom Apps', 'Bizilot Platform'].map((t) => (
+                <span key={t} className="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700/50">
+                  {t}
+                </span>
+              ))}
+            </div>
+            <Link href="/docs" className="inline-flex items-center gap-1.5 text-sm text-brand-400 hover:text-brand-300 font-medium transition-colors">
+              <ShieldCheck className="w-4 h-4" /> View the Public API & Developer Docs
+            </Link>
           </div>
         </div>
-      </footer>
+      </section>
     </div>
   );
 }

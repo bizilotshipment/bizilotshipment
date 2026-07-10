@@ -4,7 +4,7 @@ export const schemas = {
     properties: {
       id: { type: 'string', description: 'Internal UUID (e.g., shp_xxx)' },
       trackingNumber: { type: 'string', description: 'Public tracking number (e.g., TRK-XXX)' },
-      businessId: { type: 'string', description: 'ID of the business that created the shipment' },
+      accountId: { type: 'string', description: 'ID of the account that owns the shipment' },
       status: { type: 'string', enum: ['pending', 'accepted', 'picked_up', 'out_for_delivery', 'completed'] },
       pickup: { $ref: '#/components/schemas/Pickup' },
       drops: { type: 'array', items: { $ref: '#/components/schemas/Drop' } },
@@ -48,7 +48,7 @@ export const schemas = {
     properties: {
       id: { type: 'string' },
       name: { type: 'string' },
-      businessId: { type: 'string' },
+      accountId: { type: 'string' },
       webhookUrl: { type: 'string', format: 'url', nullable: true },
       webhookEvents: { type: 'array', items: { type: 'string' } },
       createdAt: { type: 'string', format: 'date-time' }

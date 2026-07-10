@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BottomNav } from '@/components/ui/BottomNav';
+import { BizilotLogo } from '@/components/ui/BizilotLogo';
 
 interface UserData {
   id: string;
@@ -54,12 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="sticky top-0 z-30 glass">
         <div className="mx-auto max-w-md px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
-                <span className="text-sm">🚚</span>
-              </div>
-              <span className="font-bold text-white text-sm">Delivery</span>
-            </div>
+            <BizilotLogo variant="full" height={44} />
             <div className="text-right">
               <p className="text-xs text-slate-400">Welcome</p>
               <p className="text-sm font-medium text-white">{user.fullName}</p>

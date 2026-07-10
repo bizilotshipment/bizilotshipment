@@ -2,21 +2,23 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Truck, ClipboardList, CheckCircle, User, LogOut } from 'lucide-react';
+import { Truck, ClipboardList, CheckCircle, User, LogOut, List, PackagePlus } from 'lucide-react';
 
 interface BottomNavProps {
   role: 'customer' | 'driver';
 }
 
 const driverNavItems = [
-  { href: '/dashboard/driver', label: 'Available', icon: ClipboardList, id: 'nav-available' },
+  { href: '/dashboard/driver?tab=available', label: 'Available', icon: ClipboardList, id: 'nav-available' },
   { href: '/dashboard/driver?tab=active', label: 'Active', icon: Truck, id: 'nav-active' },
   { href: '/dashboard/driver?tab=completed', label: 'Done', icon: CheckCircle, id: 'nav-done' },
   { href: '/dashboard/driver?tab=profile', label: 'Profile', icon: User, id: 'nav-profile' },
 ];
 
 const customerNavItems = [
-  { href: '/dashboard/customer', label: 'Profile', icon: User, id: 'nav-profile' },
+  { href: '/dashboard/console?tab=shipments', label: 'Shipments', icon: List, id: 'nav-shipments' },
+  { href: '/dashboard/console?tab=create', label: 'Create', icon: PackagePlus, id: 'nav-create' },
+  { href: '/dashboard/console?tab=profile', label: 'Profile', icon: User, id: 'nav-profile' },
 ];
 
 export function BottomNav({ role }: BottomNavProps) {
@@ -34,7 +36,12 @@ export function BottomNav({ role }: BottomNavProps) {
       <div className="mx-auto max-w-md">
         <div className="flex items-center justify-around px-2 pt-2 pb-1">
           {items.map((item) => {
-            const isActive = pathname === item.href.split('?')[0];
+            const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+            const currentTab = searchParams ? searchParams.get('tab') : null;
+            const itemTab = item.href.split('tab=')[1];
+            
+            // It's active if the query param matches exactly
+            const isActive = currentTab === itemTab || (!currentTab && item.href.endsWith(pathname));
             const Icon = item.icon;
             return (
               <button

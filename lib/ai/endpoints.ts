@@ -15,7 +15,7 @@ export const endpoints = [
       data: {
         clientId: 'string',
         apiKey: 'string (Plaintext - shown only once)',
-        businessId: 'string'
+        accountId: 'string'
       }
     },
     errors: [

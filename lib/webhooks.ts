@@ -20,7 +20,7 @@ interface WebhookPayload {
       id: string;
       trackingNumber: string;
       status: string;
-      businessId: string;
+      accountId: string;
       dropsCount: number;
     };
     driver?: PublicDriverInfo;
@@ -52,7 +52,7 @@ export async function fireWebhook(
         id: shipment.id,
         trackingNumber: shipment.trackingNumber,
         status: shipment.status,
-        businessId: shipment.businessId,
+        accountId: shipment.accountId,
         dropsCount: shipment.drops.length,
       },
       driver,
@@ -111,5 +111,6 @@ export async function fireShipmentStatusWebhook(
   event: WebhookEvent,
   driver?: PublicDriverInfo
 ): Promise<void> {
+  if (!shipment.apiClientId) return;
   await fireWebhook(shipment.apiClientId, event, shipment, driver);
 }

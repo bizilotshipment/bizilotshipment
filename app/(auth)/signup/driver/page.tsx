@@ -70,7 +70,7 @@ export default function DriverSignUpPage() {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile, otp, signup: signupData }),
+        body: JSON.stringify({ mobile, otp, role, signup: signupData }),
       });
       const data = await res.json();
 

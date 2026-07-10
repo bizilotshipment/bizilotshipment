@@ -10,7 +10,7 @@ import type {
   CustomerProfile,
   DriverProfile,
   ApiClient,
-  Business,
+  Account,
   Shipment,
   Assignment,
   StatusHistoryEntry,
@@ -24,7 +24,7 @@ const users: Map<string, User> = new Map();
 const customerProfiles: Map<string, CustomerProfile> = new Map();
 const driverProfiles: Map<string, DriverProfile> = new Map();
 const apiClients: Map<string, ApiClient> = new Map();
-const businesses: Map<string, Business> = new Map();
+const accounts: Map<string, Account> = new Map();
 const shipments: Map<string, Shipment> = new Map();
 const assignments: Map<string, Assignment> = new Map();
 const statusHistory: Map<string, StatusHistoryEntry> = new Map();
@@ -115,16 +115,16 @@ export const db = {
       updateEntity(apiClients, id, updates),
   },
 
-  // Businesses
-  businesses: {
-    create: (business: Business) => createEntity(businesses, business, business.id),
-    findById: (id: string) => findById(businesses, id),
-    findByApiClientId: (apiClientId: string) =>
-      findMany(businesses, (b) => b.apiClientId === apiClientId),
-    findMany: (predicate?: (b: Business) => boolean) =>
-      findMany(businesses, predicate),
-    update: (id: string, updates: Partial<Business>) =>
-      updateEntity(businesses, id, updates),
+  // Accounts
+  accounts: {
+    create: (account: Account) => createEntity(accounts, account, account.id),
+    findById: (id: string) => findById(accounts, id),
+    findByUserId: (userId: string) =>
+      findMany(accounts, (a) => a.userId === userId),
+    findMany: (predicate?: (a: Account) => boolean) =>
+      findMany(accounts, predicate),
+    update: (id: string, updates: Partial<Account>) =>
+      updateEntity(accounts, id, updates),
   },
 
   // Shipments

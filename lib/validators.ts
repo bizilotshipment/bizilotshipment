@@ -69,7 +69,7 @@ export const DropSchema = z.object({
 });
 
 export const CreateJobSchema = z.object({
-  businessId: z.string().optional(),
+  accountId: z.string().optional(),
   pickup: PickupSchema,
   drops: z
     .array(DropSchema)

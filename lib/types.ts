@@ -13,6 +13,8 @@ export type DriverStatus = 'available' | 'busy' | 'offline';
 
 export type ApiClientStatus = 'active' | 'suspended';
 
+export type AccountType = 'personal' | 'business' | 'integration';
+
 export type ShipmentStatus =
   | 'pending'
   | 'accepted'
@@ -54,6 +56,7 @@ export interface DriverProfile {
 export interface ApiClient {
   id: string;
   name: string;
+  accountId: string;
   apiKey: string; // hashed for storage, plain returned once at registration
   status: ApiClientStatus;
   rateLimit: number; // requests per minute
@@ -63,14 +66,13 @@ export interface ApiClient {
   createdAt: string;
 }
 
-// --- Business ---
+// --- Account ---
 
-export interface Business {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
-  apiClientId: string;
+export interface Account {
+  id: string; // format: acc_xxxx
+  name: string; // e.g. "John Doe", "ABC Shop", "Shopify Integration"
+  type: AccountType;
+  userId: string | null; // null if created strictly via integration, string if human-owned
   createdAt: string;
 }
 
@@ -79,7 +81,7 @@ export interface Business {
 export interface Pickup {
   id: string;
   shipmentId: string;
-  businessName: string;
+  businessName: string; // Kept as string for legacy naming, but represents pickup location name
   ownerName: string;
   fullAddress: string;
   mapLink: string;
@@ -100,8 +102,8 @@ export interface Drop {
 export interface Shipment {
   id: string; // format: shp_xxxx
   trackingNumber: string; // format: TRK-XXXXXXX
-  businessId: string;
-  apiClientId: string;
+  accountId: string;
+  apiClientId: string | null; // null if created manually via the Console UI
   status: ShipmentStatus;
   pickup: Pickup;
   drops: Drop[];
@@ -169,7 +171,7 @@ export interface PublicDriverInfo {
 
 export interface GroupedShipment {
   businessName: string;
-  businessId: string;
+  accountId: string;
   pickupAddress: string;
   mapLink: string;
   ownerName: string;

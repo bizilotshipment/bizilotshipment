@@ -20,7 +20,10 @@ If you make changes to the codebase, check and update these files accordingly:
 - **`lib/ai/changelog.ts`**: ALWAYS add a changelog entry when you complete a feature or fix a significant bug.
 
 ## 🏗️ Architecture & Development Rules
+**Read [AGENT_RULES.md](./AGENT_RULES.md) for the core architectural directives.**
+
 - **Terminology**: Use generic terms like `Shipment` (never "Job"), `Pickup`, `Drop`, `Assignment`. 
+- **Account-Centric**: The platform uses `Account` instead of "Business".
 - **Security**: API keys are hashed via SHA-256 in the database. Never store plaintext keys.
 - **Validation**: Use Zod (`lib/validators.ts`) for all incoming API requests.
 - **Routing**: This project uses Next.js App Router (`app/`).

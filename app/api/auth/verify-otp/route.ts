@@ -80,6 +80,15 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
       });
 
+      // Every user gets an Account
+      db.accounts.create({
+        id: generateId('acc'),
+        name: signup.fullName,
+        type: 'personal',
+        userId,
+        createdAt: new Date().toISOString(),
+      });
+
       // Create role-specific profile
       if (signup.role === 'customer') {
         db.customerProfiles.create({ userId });

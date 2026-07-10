@@ -27,7 +27,7 @@ interface ActiveShipment {
   status: ShipmentStatus;
   pickup: Shipment['pickup'];
   drops: Shipment['drops'];
-  businessId: string;
+  accountId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -153,40 +153,6 @@ export default function DriverDashboard() {
 
   return (
     <div className="space-y-4 animate-slide-up">
-      {/* Tab pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-        {[
-          { key: 'available', label: 'Available', icon: ClipboardList, count: shipments.available.reduce((sum, g) => sum + g.shipments.length, 0) },
-          { key: 'active', label: 'Assigned', icon: Truck, count: shipments.active.length },
-          { key: 'completed', label: 'Completed', icon: CheckCircle, count: shipments.completed.length },
-          { key: 'profile', label: 'Profile', icon: User, count: 0 },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setTab(tab.key)}
-            className={`
-              flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap
-              transition-all duration-200
-              ${activeTab === tab.key
-                ? 'bg-brand-600 text-white'
-                : 'bg-surface-700 text-slate-400 hover:bg-surface-600'
-              }
-            `}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-            {tab.count > 0 && (
-              <span className={`
-                px-1.5 py-0.5 rounded-full text-[10px] font-bold
-                ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-300'}
-              `}>
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
       {/* Available Shipments */}
       {activeTab === 'available' && (
         <div className="space-y-3">
@@ -209,7 +175,7 @@ export default function DriverDashboard() {
             </Card>
           ) : (
             shipments.available.map((group) => (
-              <Card key={group.businessId} className="p-4">
+              <Card key={group.accountId} className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-brand-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Package className="w-5 h-5 text-brand-400" />

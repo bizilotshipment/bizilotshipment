@@ -2,7 +2,7 @@
 // GET /api/shipments
 // ============================================================
 // Returns shipments for the authenticated driver, organized into:
-//   - available: pending shipments grouped by business pickup
+//   - available: pending shipments grouped by pickup account
 //   - active: shipments assigned to this driver
 //   - completed: completed shipments by this driver
 // ============================================================
@@ -11,12 +11,12 @@ import { db } from '@/lib/db';
 import { getUserFromRequest } from '@/lib/auth';
 import type { GroupedShipment, Shipment } from '@/lib/types';
 
-// Group pending shipments by business (pickup location)
-function groupShipmentsByBusiness(shipments: Shipment[]): GroupedShipment[] {
+// Group pending shipments by account (pickup location)
+function groupShipmentsByAccount(shipments: Shipment[]): GroupedShipment[] {
   const groups = new Map<string, GroupedShipment>();
 
   for (const shipment of shipments) {
-    const key = shipment.businessId;
+    const key = shipment.accountId;
     const existing = groups.get(key);
 
     if (existing) {
@@ -25,7 +25,7 @@ function groupShipmentsByBusiness(shipments: Shipment[]): GroupedShipment[] {
     } else {
       groups.set(key, {
         businessName: shipment.pickup.businessName,
-        businessId: shipment.businessId,
+        accountId: shipment.accountId,
         pickupAddress: shipment.pickup.fullAddress,
         mapLink: shipment.pickup.mapLink,
         ownerName: shipment.pickup.ownerName,
@@ -81,14 +81,14 @@ export async function GET(request: Request) {
     return Response.json({
       success: true,
       data: {
-        available: groupShipmentsByBusiness(availableShipments),
+        available: groupShipmentsByAccount(availableShipments),
         active: activeShipments.map((s) => ({
           id: s.id,
           trackingNumber: s.trackingNumber,
           status: s.status,
           pickup: s.pickup,
           drops: s.drops,
-          businessId: s.businessId,
+          accountId: s.accountId,
           createdAt: s.createdAt,
           updatedAt: s.updatedAt,
         })),

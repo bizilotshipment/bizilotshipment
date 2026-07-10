@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import type { JobStatus } from '@/lib/types';
+import type { ShipmentStatus } from '@/lib/types';
 
 interface BadgeProps {
-  status: JobStatus;
+  status: ShipmentStatus;
   className?: string;
 }
 
-const statusLabels: Record<JobStatus, string> = {
+const statusLabels: Record<ShipmentStatus, string> = {
   pending: 'Pending',
   accepted: 'Accepted',
   picked_up: 'Picked Up',
