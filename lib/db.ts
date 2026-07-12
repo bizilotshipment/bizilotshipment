@@ -102,6 +102,7 @@ export const db = {
       });
       return { ...result, pickup: parseJson(result.pickup), drops: parseJson(result.drops) } as unknown as Shipment;
     },
+    delete: async (id: string) => prisma.shipment.delete({ where: { id } }),
   },
 
   // Assignments
@@ -111,12 +112,14 @@ export const db = {
     findByShipmentId: async (shipmentId: string) => prisma.assignment.findMany({ where: { shipmentId } }),
     findByDriverId: async (driverId: string) => prisma.assignment.findMany({ where: { driverId } }),
     update: async (id: string, data: Partial<Assignment>) => prisma.assignment.update({ where: { id }, data }),
+    deleteMany: async (where: any) => prisma.assignment.deleteMany({ where }),
   },
 
   // Status History
   statusHistory: {
     create: async (entry: StatusHistoryEntry) => prisma.statusHistory.create({ data: entry }),
     findByShipmentId: async (shipmentId: string) => prisma.statusHistory.findMany({ where: { shipmentId } }),
+    deleteMany: async (where: any) => prisma.statusHistory.deleteMany({ where }),
   },
 
   // Webhook Logs
@@ -130,6 +133,7 @@ export const db = {
       } 
     }),
     findByApiClientId: async (apiClientId: string) => prisma.webhookLog.findMany({ where: { apiClientId } }),
+    deleteMany: async (where: any) => prisma.webhookLog.deleteMany({ where }),
   },
 
   // OTP Sessions

@@ -78,6 +78,18 @@ export const CreateJobSchema = z.object({
     .min(1, 'At least one drop is required'),
 });
 
+export const UpdateDropSchema = DropSchema.extend({
+  id: z.string().optional(),
+});
+
+export const UpdateJobSchema = z.object({
+  accountId: z.string().optional(),
+  pickup: PickupSchema,
+  drops: z
+    .array(UpdateDropSchema)
+    .min(1, 'At least one drop is required'),
+});
+
 // --- Webhook Config ---
 
 export const WebhookConfigSchema = z.object({

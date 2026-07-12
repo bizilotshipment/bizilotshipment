@@ -12,7 +12,7 @@ export function DevSwitcher() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && users.length === 0) {
+    if (isOpen) {
       fetch('/api/dev/users')
         .then((res) => res.json())
         .then((data) => {
@@ -21,7 +21,7 @@ export function DevSwitcher() {
           }
         });
     }
-  }, [isOpen, users.length]);
+  }, [isOpen]);
 
   const handleSwitch = async (userId: string) => {
     setLoading(true);

@@ -38,6 +38,8 @@ export const endpoints = [
         shipmentId: 'string',
         trackingNumber: 'string',
         status: 'string',
+        pickupOtp: 'string',
+        drops: 'Array of Drop objects',
         dropsCount: 'number',
         createdAt: 'string (ISO 8601)'
       }
@@ -110,6 +112,50 @@ export const endpoints = [
     errors: [
       { code: 401, description: 'Unauthorized' },
       { code: 400, description: 'Validation failed' }
+    ]
+  },
+  {
+    method: 'PUT',
+    path: '/api/v1/shipments/:shipmentId',
+    title: 'Edit Shipment',
+    purpose: 'Overwrite the pickup and drops for a shipment (only allowed if pending or accepted).',
+    auth: 'Bearer API Key',
+    request: {
+      pickup: 'Pickup object (required)',
+      drops: 'Array of Drop objects (required, optionally include drop id to preserve existing drops)'
+    },
+    response: {
+      success: 'boolean',
+      data: {
+        shipmentId: 'string',
+        status: 'string',
+        dropsCount: 'number',
+        updatedAt: 'string (ISO 8601)'
+      }
+    },
+    errors: [
+      { code: 401, description: 'Unauthorized' },
+      { code: 404, description: 'Shipment not found' },
+      { code: 400, description: 'Validation failed or shipment cannot be edited' }
+    ]
+  },
+  {
+    method: 'DELETE',
+    path: '/api/v1/shipments/:shipmentId',
+    title: 'Delete Shipment',
+    purpose: 'Hard delete a shipment and its history (only allowed if pending or accepted).',
+    auth: 'Bearer API Key',
+    request: null,
+    response: {
+      success: 'boolean',
+      data: {
+        message: 'string'
+      }
+    },
+    errors: [
+      { code: 401, description: 'Unauthorized' },
+      { code: 404, description: 'Shipment not found' },
+      { code: 400, description: 'Shipment cannot be deleted' }
     ]
   }
 ];

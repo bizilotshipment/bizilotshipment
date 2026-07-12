@@ -5,7 +5,7 @@
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getUserFromRequest, generateId, generateOTP } from '@/lib/auth';
+import { getUserFromRequest, generateId } from '@/lib/auth';
 import { fireShipmentStatusWebhook } from '@/lib/webhooks';
 
 export async function POST(
@@ -68,16 +68,9 @@ export async function POST(
       status: 'in_progress',
     });
 
-    // Generate Drop OTPs
-    const updatedDrops = shipment.drops.map(drop => ({
-      ...drop,
-      dropOtp: generateOTP()
-    }));
-
     // Update shipment
     const updatedShipment = await db.shipments.update(shipmentId, {
       status: 'picked_up',
-      drops: updatedDrops,
       updatedAt: now,
     });
 

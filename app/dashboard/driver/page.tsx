@@ -59,7 +59,7 @@ interface UserData {
 export default function DriverDashboard() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const activeTab = searchParams.get('tab') || 'available';
+  const tabParam = searchParams.get('tab');
   
   const [shipments, setShipments] = useState<ShipmentsData>({ available: [], active: [], completed: [] });
   const [user, setUser] = useState<UserData | null>(null);
@@ -190,6 +190,16 @@ export default function DriverDashboard() {
   const setTab = (tab: string) => {
     router.push(`/dashboard/driver?tab=${tab}`);
   };
+
+  let activeTab = 'available';
+  if (tabParam) {
+    activeTab = tabParam;
+  } else if (!loading) {
+    if (shipments.available.length > 0) activeTab = 'available';
+    else if (shipments.active.length > 0) activeTab = 'active';
+    else if (shipments.completed.length > 0) activeTab = 'completed';
+    else activeTab = 'profile';
+  }
 
   if (loading) {
     return (

@@ -6,6 +6,7 @@ export const schemas = {
       trackingNumber: { type: 'string', description: 'Public tracking number (e.g., TRK-XXX)' },
       accountId: { type: 'string', description: 'ID of the account that owns the shipment' },
       status: { type: 'string', enum: ['pending', 'accepted', 'picked_up', 'out_for_delivery', 'completed'] },
+      pickupOtp: { type: 'string', description: 'OTP required to verify pickup' },
       pickup: { $ref: '#/components/schemas/Pickup' },
       drops: { type: 'array', items: { $ref: '#/components/schemas/Drop' } },
       createdAt: { type: 'string', format: 'date-time' },
@@ -30,7 +31,8 @@ export const schemas = {
       completeAddress: { type: 'string' },
       googleMapsLink: { type: 'string', format: 'url' },
       pincode: { type: 'string' },
-      status: { type: 'string', enum: ['pending', 'completed', 'failed'] }
+      status: { type: 'string', enum: ['pending', 'completed', 'failed'] },
+      dropOtp: { type: 'string', description: 'OTP required to verify drop completion' }
     }
   },
   Assignment: {

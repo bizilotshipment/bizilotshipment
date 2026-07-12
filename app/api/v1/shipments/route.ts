@@ -6,7 +6,7 @@
 // ============================================================
 
 import { db } from '@/lib/db';
-import { getApiKeyFromRequest, generateId, hashApiKey, generateTrackingNumber, getUserFromRequest } from '@/lib/auth';
+import { getApiKeyFromRequest, generateId, hashApiKey, generateTrackingNumber, getUserFromRequest, generateOTP } from '@/lib/auth';
 import { CreateJobSchema, JobListQuerySchema } from '@/lib/validators';
 import { fireShipmentStatusWebhook } from '@/lib/webhooks';
 import type { NextRequest } from 'next/server';
@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       accountId: resolvedAccountId,
       apiClientId: apiClientId, // Can be null if manual UI user
       status: 'pending',
+      pickupOtp: generateOTP(),
       pickup: {
         id: generateId('pck'),
         shipmentId,
@@ -114,6 +115,7 @@ export async function POST(request: Request) {
         pincode: drop.pincode,
         sequenceNumber: index + 1,
         status: 'pending',
+        dropOtp: generateOTP(),
       })),
       createdAt: now,
       updatedAt: now,
@@ -140,6 +142,8 @@ export async function POST(request: Request) {
           trackingNumber: shipment.trackingNumber,
           status: shipment.status,
           accountId: shipment.accountId,
+          pickupOtp: shipment.pickupOtp,
+          drops: shipment.drops,
           dropsCount: shipment.drops.length,
           createdAt: shipment.createdAt,
         },
@@ -184,9 +188,9 @@ export async function GET(request: NextRequest) {
     const { status, page, limit } = query.data;
 
     // Filter shipments belonging to this account
-    let shipments = await db.shipments.findMany(
-      (s) => s.accountId === account.id
-    );
+    let shipments = await db.shipments.findMany({
+      accountId: account.id
+    });
 
     if (status) {
       shipments = shipments.filter((s) => s.status === status);
