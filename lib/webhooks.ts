@@ -98,6 +98,7 @@ export async function fireWebhook(
     apiClientId,
     shipmentId: shipment.id,
     event,
+    endpoint: client.webhookUrl,
     payload: payloadStr,
     statusCode,
     sentAt: new Date().toISOString(),

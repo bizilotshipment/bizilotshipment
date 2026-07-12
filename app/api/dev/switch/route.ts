@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const token = await createToken(user);
+    const token = await createToken(user as any);
     const response = NextResponse.json({ success: true, role: user.role });
 
     response.cookies.set({

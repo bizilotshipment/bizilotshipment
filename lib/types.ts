@@ -144,6 +144,7 @@ export interface WebhookLog {
   apiClientId: string;
   shipmentId: string;
   event: WebhookEvent;
+  endpoint: string;
   payload: string; // JSON stringified
   statusCode: number | null; // null if request failed
   sentAt: string;

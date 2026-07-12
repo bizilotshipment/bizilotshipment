@@ -92,11 +92,11 @@ export async function GET(request: Request) {
     }
 
     // Get recent webhook logs
-    const logs = db.webhookLogs
-      .findByApiClientId(client.id)
+    const rawLogs = await db.webhookLogs.findByApiClientId(client.id);
+    const logs = rawLogs
       .sort(
-        (a, b) =>
-          new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime()
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
       .slice(0, 50);
 
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
       data: {
         webhookUrl: client.webhookUrl,
         events: client.webhookEvents,
-        recentLogs: logs.map((l) => ({
+        recentLogs: logs.map((l: any) => ({
           id: l.id,
           event: l.event,
           shipmentId: l.shipmentId,

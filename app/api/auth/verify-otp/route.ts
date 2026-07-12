@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     }
 
     // Issue JWT
-    const token = await createToken(user);
+    const token = await createToken(user as any);
 
     // Set cookie and return token
     const response = Response.json(

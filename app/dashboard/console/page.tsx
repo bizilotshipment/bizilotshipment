@@ -182,7 +182,7 @@ function ShipmentsView() {
               <div className={`flex-1 h-0.5 ${['picked_up', 'out_for_delivery', 'completed'].includes(s.status) ? 'bg-emerald-500/50' : 'bg-slate-700'}`} />
               
               {/* Drop Nodes */}
-              {s.drops?.map((drop, i) => {
+              {s.drops?.map((drop: any, i: number) => {
                 const isDelivered = drop.status === 'delivered';
                 const isNextPending = drop.status === 'pending' && (i === 0 || s.drops[i-1].status === 'delivered');
                 const isCurrentActive = isNextPending && ['picked_up', 'out_for_delivery'].includes(s.status);
