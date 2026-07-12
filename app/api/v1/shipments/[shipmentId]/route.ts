@@ -26,7 +26,7 @@ export async function GET(
       );
     }
 
-    const hashedApiKey = hashApiKey(apiKey);
+    const hashedApiKey = await hashApiKey(apiKey);
     const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
@@ -111,7 +111,7 @@ export async function PUT(
 
     const apiKey = getApiKeyFromRequest(request);
     if (!apiKey) return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    const hashedApiKey = hashApiKey(apiKey);
+    const hashedApiKey = await hashApiKey(apiKey);
     const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) return Response.json({ success: false, error: 'Invalid API key' }, { status: 401 });
 
@@ -209,7 +209,7 @@ export async function DELETE(
 
     const apiKey = getApiKeyFromRequest(request);
     if (!apiKey) return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    const hashedApiKey = hashApiKey(apiKey);
+    const hashedApiKey = await hashApiKey(apiKey);
     const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) return Response.json({ success: false, error: 'Invalid API key' }, { status: 401 });
 

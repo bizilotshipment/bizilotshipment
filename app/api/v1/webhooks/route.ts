@@ -22,7 +22,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const hashedApiKey = hashApiKey(apiKey);
+    const hashedApiKey = await hashApiKey(apiKey);
     const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const hashedApiKey = hashApiKey(apiKey);
+    const hashedApiKey = await hashApiKey(apiKey);
     const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(

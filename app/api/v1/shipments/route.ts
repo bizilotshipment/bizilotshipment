@@ -16,7 +16,7 @@ async function authenticateAccount(request: Request) {
   // 1. Try API Key
   const apiKey = getApiKeyFromRequest(request);
   if (apiKey) {
-    const hashed = hashApiKey(apiKey);
+    const hashed = await hashApiKey(apiKey);
     const client = await db.apiClients.findByApiKey(hashed);
     if (!client) return { error: 'Invalid API key', status: 401 };
     if (client.status !== 'active') return { error: 'API client is suspended', status: 403 };

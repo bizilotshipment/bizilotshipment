@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
     // Generate API key (plain text — shown once)
     const apiKey = generateApiKey();
-    const hashedApiKey = hashApiKey(apiKey);
+    const hashedApiKey = await hashApiKey(apiKey);
     const clientId = generateId('cli');
 
     // Auto-create a default account for this client

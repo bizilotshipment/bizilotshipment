@@ -7,7 +7,6 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
-import crypto from 'crypto';
 import type { User, UserRole } from './types';
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -75,8 +74,12 @@ export function generateApiKey(): string {
   return `dk_live_${nanoid(32)}`;
 }
 
-export function hashApiKey(apiKey: string): string {
-  return crypto.createHash('sha256').update(apiKey).digest('hex');
+export async function hashApiKey(apiKey: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(apiKey);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // --- Auth Extraction from Request ---
