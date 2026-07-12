@@ -167,14 +167,53 @@ function ShipmentsView() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-sm text-slate-300 bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-brand-400" />
-              <span className="font-medium truncate max-w-[150px]">{s.pickup.businessName}</span>
+          {/* Progress Stepper */}
+          <div className="mt-4 pt-4 border-t border-slate-700/50">
+            <div className="flex items-center w-full px-2">
+              {/* Pickup Node */}
+              <div className="relative">
+                <div className={`w-3 h-3 rounded-full z-10 relative ${['pending', 'accepted'].includes(s.status) ? 'bg-brand-500 shadow-[0_0_8px_rgba(var(--brand-500),0.5)]' : 'bg-emerald-500'}`} />
+                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium text-slate-400">
+                  Pickup
+                </div>
+              </div>
+              
+              {/* Connecting Line from Pickup */}
+              <div className={`flex-1 h-0.5 ${['picked_up', 'out_for_delivery', 'completed'].includes(s.status) ? 'bg-emerald-500/50' : 'bg-slate-700'}`} />
+              
+              {/* Drop Nodes */}
+              {s.drops?.map((drop, i) => {
+                const isDelivered = drop.status === 'delivered';
+                const isNextPending = drop.status === 'pending' && (i === 0 || s.drops[i-1].status === 'delivered');
+                const isCurrentActive = isNextPending && ['picked_up', 'out_for_delivery'].includes(s.status);
+                
+                return (
+                  <div key={drop.id} className="contents">
+                    <div className="relative">
+                      <div className={`w-3 h-3 rounded-full z-10 relative ${isDelivered ? 'bg-emerald-500' : isCurrentActive ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-700'}`} />
+                      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium text-slate-400">
+                        {s.drops.length === 1 ? 'Drop' : `Drop ${i + 1}`}
+                      </div>
+                      
+                      {/* Show OTP for active drop */}
+                      {isCurrentActive && drop.dropOtp && (
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono px-1.5 py-0.5 rounded">
+                          OTP: {drop.dropOtp}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Connecting Line between Drops */}
+                    {i < s.drops.length - 1 && (
+                      <div className={`flex-1 h-0.5 ${isDelivered ? 'bg-emerald-500/50' : 'bg-slate-700'}`} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <ArrowRight className="w-4 h-4 text-slate-600 flex-shrink-0" />
-            <div className="flex-1 truncate">
-              {s.dropsCount === 1 ? (s.drops?.[0]?.customerName || '1 Customer') : 'Multiple Customers'}
+            <div className="mt-8 flex items-center justify-between text-[11px] text-slate-500 px-1">
+              <span className="truncate max-w-[120px]">{s.pickup.businessName}</span>
+              <span className="truncate max-w-[120px] text-right">{s.drops?.[s.drops.length-1]?.customerName}</span>
             </div>
           </div>
         </Card>

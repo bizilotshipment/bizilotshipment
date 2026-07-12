@@ -52,7 +52,7 @@
       "trackingNumber": "TRK-RM78COK6",
       "accountId": "acc_fBY3iX7cgFb_PBy_",
       "apiClientId": null,
-      "status": "accepted",
+      "status": "picked_up",
       "pickup": {
         "id": "pck_3tzr2Bw0lpMGchq0",
         "shipmentId": "shp_CQrjE6zhYXrmyIae",
@@ -73,7 +73,8 @@
           "googleMapsLink": "https://www.youtube.com/",
           "pincode": "444444",
           "sequenceNumber": 1,
-          "status": "pending"
+          "status": "pending",
+          "dropOtp": "8420"
         },
         {
           "id": "drp_8cJvBSQwITOgqtLO",
@@ -84,12 +85,57 @@
           "googleMapsLink": "https://www.youtube.com/",
           "pincode": "121232",
           "sequenceNumber": 2,
-          "status": "pending"
+          "status": "pending",
+          "dropOtp": "6603"
         }
       ],
       "createdAt": "2026-07-12T06:05:26.362Z",
-      "updatedAt": "2026-07-12T06:15:29.861Z",
+      "updatedAt": "2026-07-12T06:35:11.100Z",
       "pickupOtp": "6003"
+    },
+    "shp_9zhF3JLHcR7bdeMm": {
+      "id": "shp_9zhF3JLHcR7bdeMm",
+      "trackingNumber": "TRK-OJIFGHLC",
+      "accountId": "acc_fBY3iX7cgFb_PBy_",
+      "apiClientId": null,
+      "status": "accepted",
+      "pickup": {
+        "id": "pck_yX-mjN04sfFISJ9F",
+        "shipmentId": "shp_9zhF3JLHcR7bdeMm",
+        "businessName": "Pickup",
+        "ownerName": "sufeyan",
+        "contactNumber": "5555555555",
+        "fullAddress": "hassan nagar",
+        "mapLink": "https://www.youtube.com/",
+        "pincode": "333333"
+      },
+      "drops": [
+        {
+          "id": "drp_qL8HdaERHfj06V-B",
+          "shipmentId": "shp_9zhF3JLHcR7bdeMm",
+          "customerName": "riz",
+          "contactNumber": "4444444444",
+          "completeAddress": "Tadban",
+          "googleMapsLink": "https://www.youtube.com/",
+          "pincode": "444444",
+          "sequenceNumber": 1,
+          "status": "pending"
+        },
+        {
+          "id": "drp_G6QGDNWwZKCTUqGe",
+          "shipmentId": "shp_9zhF3JLHcR7bdeMm",
+          "customerName": "eee",
+          "contactNumber": "3333333333",
+          "completeAddress": "Bahadurpura",
+          "googleMapsLink": "https://www.youtube.com/",
+          "pincode": "121232",
+          "sequenceNumber": 2,
+          "status": "pending"
+        }
+      ],
+      "createdAt": "2026-07-12T06:34:32.603Z",
+      "updatedAt": "2026-07-12T06:34:57.636Z",
+      "pickupOtp": "8417"
     }
   },
   "assignments": {
@@ -97,8 +143,15 @@
       "id": "asg_nQvCppXGTACCh8h9",
       "shipmentId": "shp_CQrjE6zhYXrmyIae",
       "driverId": "usr_gq1o6vjhfZoaf5ad",
-      "status": "assigned",
+      "status": "in_progress",
       "assignedAt": "2026-07-12T06:15:29.861Z"
+    },
+    "asg_3MehjwoHCeyBhERt": {
+      "id": "asg_3MehjwoHCeyBhERt",
+      "shipmentId": "shp_9zhF3JLHcR7bdeMm",
+      "driverId": "usr_gq1o6vjhfZoaf5ad",
+      "status": "assigned",
+      "assignedAt": "2026-07-12T06:34:57.636Z"
     }
   },
   "statusHistory": {
@@ -117,6 +170,30 @@
       "toStatus": "accepted",
       "changedBy": "usr_gq1o6vjhfZoaf5ad",
       "changedAt": "2026-07-12T06:15:29.861Z"
+    },
+    "sth_N1NKCnuc7v3EwPB1": {
+      "id": "sth_N1NKCnuc7v3EwPB1",
+      "shipmentId": "shp_9zhF3JLHcR7bdeMm",
+      "fromStatus": null,
+      "toStatus": "pending",
+      "changedBy": "system",
+      "changedAt": "2026-07-12T06:34:32.603Z"
+    },
+    "sth_spxQmmPi4Zh--xZX": {
+      "id": "sth_spxQmmPi4Zh--xZX",
+      "shipmentId": "shp_9zhF3JLHcR7bdeMm",
+      "fromStatus": "pending",
+      "toStatus": "accepted",
+      "changedBy": "usr_gq1o6vjhfZoaf5ad",
+      "changedAt": "2026-07-12T06:34:57.636Z"
+    },
+    "sth_6mYsGEoDFNsxkYvO": {
+      "id": "sth_6mYsGEoDFNsxkYvO",
+      "shipmentId": "shp_CQrjE6zhYXrmyIae",
+      "fromStatus": "accepted",
+      "toStatus": "picked_up",
+      "changedBy": "usr_gq1o6vjhfZoaf5ad",
+      "changedAt": "2026-07-12T06:35:11.100Z"
     }
   },
   "webhookLogs": {},

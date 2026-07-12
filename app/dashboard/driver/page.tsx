@@ -297,107 +297,93 @@ export default function DriverDashboard() {
                   <Badge status={shipment.status} />
                 </div>
 
-                {/* Pickup */}
-                <div className="flex items-start gap-2 mb-2 p-2 rounded-lg bg-surface-700/50">
-                  <div className="w-5 h-5 rounded-full bg-brand-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <MapPin className="w-3 h-3 text-brand-400" />
+                <div className="relative pl-6 pt-2 pb-4 space-y-6 before:absolute before:inset-0 before:ml-8 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-700 before:to-transparent">
+                  {/* Pickup Timeline Node */}
+                  <div className="relative flex items-start gap-4">
+                    <div className="absolute -left-6 mt-1 w-6 h-6 rounded-full bg-surface-900 border-2 border-brand-500 flex items-center justify-center z-10 shadow-[0_0_10px_rgba(var(--brand-500),0.3)]">
+                      <MapPin className="w-3 h-3 text-brand-400" />
+                    </div>
+                    <div className="flex-1 bg-surface-700/50 rounded-xl p-3 border border-slate-700/50">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-xs font-bold text-brand-400 uppercase tracking-wider mb-1">Pickup</p>
+                          <p className="text-sm font-medium text-white">{shipment.pickup.businessName}</p>
+                          <p className="text-xs text-slate-300 mt-1">{shipment.pickup.fullAddress}</p>
+                        </div>
+                        {shipment.pickup.mapLink && (
+                          <a href={shipment.pickup.mapLink} target="_blank" rel="noopener noreferrer" className="p-2 bg-brand-500/10 text-brand-400 rounded-lg hover:bg-brand-500/20 transition-colors">
+                            <Navigation className="w-4 h-4" />
+                          </a>
+                        )}
+                      </div>
+                      
+                      {/* Active Pickup Action */}
+                      {shipment.status === 'accepted' && (
+                        <div className="mt-4 pt-3 border-t border-slate-700/50">
+                          <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2">Verify Pickup OTP</p>
+                          <input
+                            type="text"
+                            maxLength={4}
+                            placeholder="XXXX"
+                            className="input-field text-center tracking-widest text-lg py-2 w-full max-w-[200px]"
+                            value={otpInputs[shipment.id] || ''}
+                            onChange={(e) => handlePickupOtpChange(shipment.id, e.target.value)}
+                            disabled={actionLoading === shipment.id}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-brand-300">Pickup</p>
-                    <p className="text-sm text-slate-300 truncate">{shipment.pickup.fullAddress}</p>
-                    {shipment.pickup.mapLink && (
-                      <a
-                        href={shipment.pickup.mapLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 mt-1"
-                      >
-                        <Navigation className="w-3 h-3" />
-                        Navigate
-                      </a>
-                    )}
-                  </div>
-                </div>
 
-                {/* Drops toggle */}
-                <button
-                  onClick={() => setExpandedShipment(expandedShipment === shipment.id ? null : shipment.id)}
-                  className="w-full flex items-center justify-between p-2 rounded-lg bg-surface-700/30 hover:bg-surface-700/50 transition-colors"
-                >
-                  <span className="text-sm text-slate-300">
-                    {shipment.drops.length} {shipment.drops.length === 1 ? 'drop' : 'drops'}
-                  </span>
-                  {expandedShipment === shipment.id ? (
-                    <ChevronUp className="w-4 h-4 text-slate-400" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
-                  )}
-                </button>
-
-                {/* Expanded drops */}
-                {expandedShipment === shipment.id && (
-                  <div className="mt-2 space-y-2 animate-slide-up">
-                    {shipment.drops.map((drop, i) => (
-                      <div key={drop.id} className="flex flex-col gap-2 p-2 rounded-lg bg-surface-700/30">
-                        <div className="flex items-start gap-2">
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${drop.status === 'delivered' ? 'bg-emerald-600/20 text-emerald-400' : drop.status === 'pending' ? 'bg-amber-600/20 text-amber-400' : 'bg-red-600/20 text-red-400'}`}>
-                            {drop.status === 'delivered' ? <CheckCircle className="w-3 h-3" /> : drop.status === 'pending' ? <span className="text-[10px] font-bold">{i + 1}</span> : <AlertTriangle className="w-3 h-3" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white">{drop.customerName}</p>
-                            <p className="text-xs text-slate-400 truncate">{drop.completeAddress}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] text-slate-500">{drop.pincode}</span>
+                  {/* Drops Timeline Nodes */}
+                  {shipment.drops.map((drop, i) => {
+                    const isDelivered = drop.status === 'delivered';
+                    const isNextDrop = drop.status === 'pending' && (i === 0 || shipment.drops[i-1].status === 'delivered');
+                    const isActiveNode = shipment.status !== 'accepted' && isNextDrop;
+                    
+                    return (
+                      <div key={drop.id} className={`relative flex items-start gap-4 transition-opacity ${!isDelivered && !isActiveNode ? 'opacity-70' : 'opacity-100'}`}>
+                        <div className={`absolute -left-6 mt-1 w-6 h-6 rounded-full bg-surface-900 border-2 z-10 flex items-center justify-center ${isDelivered ? 'border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : isActiveNode ? 'border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'border-slate-600'}`}>
+                          {isDelivered ? <CheckCircle className="w-3 h-3 text-emerald-400" /> : <span className={`text-[10px] font-bold ${isActiveNode ? 'text-amber-400' : 'text-slate-400'}`}>{i + 1}</span>}
+                        </div>
+                        <div className={`flex-1 rounded-xl p-3 border ${isActiveNode ? 'bg-amber-900/20 border-amber-500/30' : 'bg-surface-700/30 border-slate-700/50'}`}>
+                          <div className="flex justify-between items-start">
+                            <div className="min-w-0 pr-3">
+                              <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDelivered ? 'text-emerald-400' : isActiveNode ? 'text-amber-400' : 'text-slate-400'}`}>
+                                {isDelivered ? 'Delivered' : `Drop ${i + 1}`}
+                              </p>
+                              <p className="text-sm font-medium text-white truncate">{drop.customerName}</p>
+                              <p className="text-xs text-slate-300 mt-1 line-clamp-2">{drop.completeAddress}</p>
+                              <p className="text-[10px] text-slate-500 mt-1 font-mono">PIN: {drop.pincode}</p>
+                            </div>
+                            <div className="flex flex-col gap-2 flex-shrink-0">
                               {drop.googleMapsLink && (
-                                <a
-                                  href={drop.googleMapsLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-[10px] text-brand-400"
-                                >
-                                  <Navigation className="w-2.5 h-2.5" />
-                                  Map
+                                <a href={drop.googleMapsLink} target="_blank" rel="noopener noreferrer" className="p-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors">
+                                  <Navigation className="w-4 h-4" />
                                 </a>
                               )}
                             </div>
                           </div>
+
+                          {/* Active Drop Action */}
+                          {isActiveNode && (
+                            <div className="mt-4 pt-3 border-t border-amber-500/20">
+                              <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">Verify Delivery OTP</p>
+                              <input
+                                type="text"
+                                maxLength={4}
+                                placeholder="XXXX"
+                                className="input-field text-center tracking-widest text-lg py-2 w-full max-w-[200px]"
+                                value={otpInputs[`${shipment.id}-${i}`] || ''}
+                                onChange={(e) => handleDropOtpChange(shipment.id, i, e.target.value)}
+                                disabled={actionLoading === 'complete' && deliveryModal?.dropIndex === i}
+                              />
+                            </div>
+                          )}
                         </div>
-
-                        {drop.status === 'pending' && shipment.status !== 'accepted' && (
-                          <div className="mt-1 flex flex-col gap-1.5 pl-7 border-t border-slate-700/30 pt-2">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Verify Delivery OTP</p>
-                            <input
-                              type="text"
-                              maxLength={4}
-                              placeholder="XXXX"
-                              className="input-field text-center tracking-widest text-sm py-1.5"
-                              value={otpInputs[`${shipment.id}-${i}`] || ''}
-                              onChange={(e) => handleDropOtpChange(shipment.id, i, e.target.value)}
-                              disabled={actionLoading === 'complete' && deliveryModal?.dropIndex === i}
-                            />
-                          </div>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Action button */}
-                <div className="mt-3">
-                  {shipment.status === 'accepted' && (
-                    <div className="flex flex-col gap-2 p-3 bg-surface-700/50 rounded-lg border border-purple-500/20">
-                      <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider text-center">Verify Pickup OTP</p>
-                      <input
-                        type="text"
-                        maxLength={4}
-                        placeholder="XXXX"
-                        className="input-field text-center tracking-widest text-lg py-2"
-                        value={otpInputs[shipment.id] || ''}
-                        onChange={(e) => handlePickupOtpChange(shipment.id, e.target.value)}
-                        disabled={actionLoading === shipment.id}
-                      />
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               </Card>
             ))
