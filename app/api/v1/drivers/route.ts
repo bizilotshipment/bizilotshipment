@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const client = db.apiClients.findByApiKey(apiKey);
+    const client = await db.apiClients.findByApiKey(apiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },
@@ -28,11 +28,11 @@ export async function GET(request: Request) {
     }
 
     // Get all driver profiles
-    const driverProfiles = db.driverProfiles.findMany();
+    const driverProfiles = await db.driverProfiles.findMany();
 
-    const drivers: PublicDriverInfo[] = driverProfiles
-      .map((profile) => {
-        const user = db.users.findById(profile.userId);
+    const driverProfilesRaw = await Promise.all(
+      driverProfiles.map(async (profile) => {
+        const user = await db.users.findById(profile.userId);
         if (!user) return null;
         return {
           id: user.id,
@@ -41,7 +41,8 @@ export async function GET(request: Request) {
           status: profile.status,
         };
       })
-      .filter((d): d is PublicDriverInfo => d !== null);
+    );
+    const drivers: PublicDriverInfo[] = driverProfilesRaw.filter((d): d is PublicDriverInfo => d !== null);
 
     return Response.json({
       success: true,

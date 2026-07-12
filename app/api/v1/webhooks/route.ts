@@ -23,7 +23,7 @@ export async function PUT(request: Request) {
     }
 
     const hashedApiKey = hashApiKey(apiKey);
-    const client = db.apiClients.findByApiKey(hashedApiKey);
+    const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },
@@ -49,7 +49,7 @@ export async function PUT(request: Request) {
     const { webhookUrl, events } = parsed.data;
 
     // Update client
-    db.apiClients.update(client.id, {
+    await db.apiClients.update(client.id, {
       webhookUrl,
       webhookEvents: events,
     });
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     }
 
     const hashedApiKey = hashApiKey(apiKey);
-    const client = db.apiClients.findByApiKey(hashedApiKey);
+    const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },

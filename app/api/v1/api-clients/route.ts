@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     // Auto-create a default account for this client
     const accountId = generateId('acc');
-    db.accounts.create({
+    await db.accounts.create({
       id: accountId,
       name,
       type: 'integration',
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     });
 
     // Create API client
-    db.apiClients.create({
+    await db.apiClients.create({
       id: clientId,
       name,
       accountId,

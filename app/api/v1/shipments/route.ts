@@ -17,11 +17,11 @@ async function authenticateAccount(request: Request) {
   const apiKey = getApiKeyFromRequest(request);
   if (apiKey) {
     const hashed = hashApiKey(apiKey);
-    const client = db.apiClients.findByApiKey(hashed);
+    const client = await db.apiClients.findByApiKey(hashed);
     if (!client) return { error: 'Invalid API key', status: 401 };
     if (client.status !== 'active') return { error: 'API client is suspended', status: 403 };
     
-    const account = db.accounts.findById(client.accountId);
+    const account = await db.accounts.findById(client.accountId);
     if (!account) return { error: 'Account not found for this client', status: 404 };
     
     return { account, apiClientId: client.id };
@@ -30,7 +30,7 @@ async function authenticateAccount(request: Request) {
   // 2. Try JWT Cookie (Manual UI Client)
   const user = await getUserFromRequest(request);
   if (user) {
-    const accounts = db.accounts.findByUserId(user.userId);
+    const accounts = await db.accounts.findByUserId(user.userId);
     if (accounts.length === 0) return { error: 'No account associated with this user', status: 404 };
     
     // For manual console users, apiClientId is explicitly null
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     const trackingNumber = generateTrackingNumber();
     const now = new Date().toISOString();
 
-    const shipment = db.shipments.create({
+    const shipment = await db.shipments.create({
       id: shipmentId,
       trackingNumber,
       accountId: resolvedAccountId,
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     });
 
     // Record status history
-    db.statusHistory.create({
+    await db.statusHistory.create({
       id: generateId('sth'),
       shipmentId,
       fromStatus: null,
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
     const { status, page, limit } = query.data;
 
     // Filter shipments belonging to this account
-    let shipments = db.shipments.findMany(
+    let shipments = await db.shipments.findMany(
       (s) => s.accountId === account.id
     );
 

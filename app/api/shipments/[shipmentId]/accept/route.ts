@@ -24,7 +24,7 @@ export async function POST(
     }
 
     // Find shipment
-    const shipment = db.shipments.findById(shipmentId);
+    const shipment = await db.shipments.findById(shipmentId);
     if (!shipment) {
       return Response.json(
         { success: false, error: 'Shipment not found' },
@@ -40,7 +40,7 @@ export async function POST(
     }
 
     // Check if already assigned
-    const existingAssignments = db.assignments.findByShipmentId(shipmentId);
+    const existingAssignments = await db.assignments.findByShipmentId(shipmentId);
     if (existingAssignments.some((a) => a.status === 'assigned' || a.status === 'in_progress')) {
       return Response.json(
         { success: false, error: 'Shipment is already assigned to another driver' },
@@ -51,7 +51,7 @@ export async function POST(
     const now = new Date().toISOString();
 
     // Create Assignment
-    db.assignments.create({
+    await db.assignments.create({
       id: generateId('asg'),
       shipmentId,
       driverId: payload.userId,
@@ -62,17 +62,17 @@ export async function POST(
     const pickupOtp = generateOTP();
 
     // Update shipment status
-    const updatedShipment = db.shipments.update(shipmentId, {
+    const updatedShipment = await db.shipments.update(shipmentId, {
       status: 'accepted',
       pickupOtp,
       updatedAt: now,
     });
 
     // Update driver status
-    db.driverProfiles.update(payload.userId, { status: 'busy' });
+    await db.driverProfiles.update(payload.userId, { status: 'busy' });
 
     // Record status history
-    db.statusHistory.create({
+    await db.statusHistory.create({
       id: generateId('sth'),
       shipmentId,
       fromStatus: 'pending',
@@ -83,8 +83,8 @@ export async function POST(
 
     // Fire webhook
     if (updatedShipment) {
-      const user = db.users.findById(payload.userId);
-      const profile = db.driverProfiles.findByUserId(payload.userId);
+      const user = await db.users.findById(payload.userId);
+      const profile = await db.driverProfiles.findByUserId(payload.userId);
       fireShipmentStatusWebhook(updatedShipment, 'shipment.accepted', {
         id: payload.userId,
         name: user?.fullName || '',

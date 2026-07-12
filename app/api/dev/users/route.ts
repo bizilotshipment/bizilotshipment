@@ -6,6 +6,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Not enabled' }, { status: 403 });
   }
   
-  const users = db.users.findMany();
+  const users = await db.users.findMany();
   return NextResponse.json({ success: true, users });
 }

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const user = db.users.findById(payload.userId);
+    const user = await db.users.findById(payload.userId);
     if (!user) {
       return Response.json(
         { success: false, error: 'User not found' },
@@ -28,9 +28,9 @@ export async function GET(request: Request) {
     // Get role-specific profile
     let profile = null;
     if (user.role === 'customer') {
-      profile = db.customerProfiles.findByUserId(user.id);
+      profile = await db.customerProfiles.findByUserId(user.id);
     } else {
-      profile = db.driverProfiles.findByUserId(user.id);
+      profile = await db.driverProfiles.findByUserId(user.id);
     }
 
     return Response.json({

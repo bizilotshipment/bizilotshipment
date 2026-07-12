@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const expiresAt = getOTPExpiry();
 
     // Store OTP session (overwrites any existing one for this mobile)
-    db.otpSessions.create({
+    await db.otpSessions.create({
       mobile,
       otp,
       expiresAt,

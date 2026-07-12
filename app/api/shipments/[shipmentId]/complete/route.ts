@@ -34,7 +34,7 @@ export async function POST(
     }
 
     // Find shipment
-    const shipment = db.shipments.findById(shipmentId);
+    const shipment = await db.shipments.findById(shipmentId);
     if (!shipment) {
       return Response.json(
         { success: false, error: 'Shipment not found' },
@@ -51,7 +51,7 @@ export async function POST(
     }
 
     // Verify assignment
-    const assignments = db.assignments.findByShipmentId(shipmentId);
+    const assignments = await db.assignments.findByShipmentId(shipmentId);
     const driverAssignment = assignments.find(
       (a) => a.driverId === payload.userId && a.status === 'in_progress'
     );
@@ -90,19 +90,19 @@ export async function POST(
     const allCompleted = updatedDrops.every(d => d.status !== 'pending');
 
     // Update shipment
-    const updatedShipment = db.shipments.update(shipmentId, {
+    const updatedShipment = await db.shipments.update(shipmentId, {
       status: allCompleted ? 'completed' : 'out_for_delivery',
       drops: updatedDrops,
       updatedAt: now,
     });
 
     if (allCompleted) {
-      db.assignments.update(driverAssignment.id, {
+      await db.assignments.update(driverAssignment.id, {
         status: 'completed',
       });
-      db.driverProfiles.update(payload.userId, { status: 'available' });
+      await db.driverProfiles.update(payload.userId, { status: 'available' });
 
-      db.statusHistory.create({
+      await db.statusHistory.create({
         id: generateId('sth'),
         shipmentId,
         fromStatus: shipment.status,
@@ -112,8 +112,8 @@ export async function POST(
       });
 
       if (updatedShipment) {
-        const user = db.users.findById(payload.userId);
-        const profile = db.driverProfiles.findByUserId(payload.userId);
+        const user = await db.users.findById(payload.userId);
+        const profile = await db.driverProfiles.findByUserId(payload.userId);
         fireShipmentStatusWebhook(updatedShipment, 'shipment.completed', {
           id: payload.userId,
           name: user?.fullName || '',

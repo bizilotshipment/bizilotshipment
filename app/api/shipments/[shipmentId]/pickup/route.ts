@@ -26,7 +26,7 @@ export async function POST(
     }
 
     // Find shipment
-    const shipment = db.shipments.findById(shipmentId);
+    const shipment = await db.shipments.findById(shipmentId);
     if (!shipment) {
       return Response.json(
         { success: false, error: 'Shipment not found' },
@@ -49,7 +49,7 @@ export async function POST(
     }
 
     // Verify assignment
-    const assignments = db.assignments.findByShipmentId(shipmentId);
+    const assignments = await db.assignments.findByShipmentId(shipmentId);
     const driverAssignment = assignments.find(
       (a) => a.driverId === payload.userId && a.status === 'assigned'
     );
@@ -64,7 +64,7 @@ export async function POST(
     const now = new Date().toISOString();
 
     // Update assignment
-    db.assignments.update(driverAssignment.id, {
+    await db.assignments.update(driverAssignment.id, {
       status: 'in_progress',
     });
 
@@ -75,14 +75,14 @@ export async function POST(
     }));
 
     // Update shipment
-    const updatedShipment = db.shipments.update(shipmentId, {
+    const updatedShipment = await db.shipments.update(shipmentId, {
       status: 'picked_up',
       drops: updatedDrops,
       updatedAt: now,
     });
 
     // Record status history
-    db.statusHistory.create({
+    await db.statusHistory.create({
       id: generateId('sth'),
       shipmentId,
       fromStatus: 'accepted',
@@ -93,8 +93,8 @@ export async function POST(
 
     // Fire webhook
     if (updatedShipment) {
-      const user = db.users.findById(payload.userId);
-      const profile = db.driverProfiles.findByUserId(payload.userId);
+      const user = await db.users.findById(payload.userId);
+      const profile = await db.driverProfiles.findByUserId(payload.userId);
       fireShipmentStatusWebhook(updatedShipment, 'shipment.picked_up', {
         id: payload.userId,
         name: user?.fullName || '',

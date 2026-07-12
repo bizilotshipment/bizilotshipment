@@ -25,7 +25,7 @@ export async function GET(
     }
 
     const hashedApiKey = hashApiKey(apiKey);
-    const client = db.apiClients.findByApiKey(hashedApiKey);
+    const client = await db.apiClients.findByApiKey(hashedApiKey);
     if (!client) {
       return Response.json(
         { success: false, error: 'Invalid API key' },
@@ -34,7 +34,7 @@ export async function GET(
     }
 
     // Find shipment
-    const shipment = db.shipments.findById(shipmentId);
+    const shipment = await db.shipments.findById(shipmentId);
     if (!shipment || shipment.apiClientId !== client.id) {
       return Response.json(
         { success: false, error: 'Shipment not found' },
@@ -44,13 +44,13 @@ export async function GET(
 
     // Get driver info if assigned
     let driver = null;
-    const assignments = db.assignments.findByShipmentId(shipment.id);
+    const assignments = await db.assignments.findByShipmentId(shipment.id);
     const activeAssignment = assignments.find(
       (a) => a.status === 'assigned' || a.status === 'in_progress'
     );
     if (activeAssignment) {
-      const user = db.users.findById(activeAssignment.driverId);
-      const profile = db.driverProfiles.findByUserId(activeAssignment.driverId);
+      const user = await db.users.findById(activeAssignment.driverId);
+      const profile = await db.driverProfiles.findByUserId(activeAssignment.driverId);
       if (user && profile) {
         driver = {
           name: user.fullName,

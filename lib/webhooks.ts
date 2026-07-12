@@ -33,7 +33,7 @@ export async function fireWebhook(
   shipment: Shipment,
   driver?: PublicDriverInfo
 ): Promise<void> {
-  const client = db.apiClients.findById(apiClientId);
+  const client = await db.apiClients.findById(apiClientId);
   if (!client || !client.webhookUrl) return;
 
   // Check if client is subscribed to this event
@@ -93,7 +93,7 @@ export async function fireWebhook(
   }
 
   // Log the webhook attempt
-  db.webhookLogs.create({
+  await db.webhookLogs.create({
     id: generateId('whl'),
     apiClientId,
     shipmentId: shipment.id,

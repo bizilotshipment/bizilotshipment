@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const { mobile, otp, role, signup } = parsed.data;
 
     // Find OTP session
-    const session = db.otpSessions.findByMobile(mobile);
+    const session = await db.otpSessions.findByMobile(mobile);
     if (!session) {
       return Response.json(
         { success: false, error: 'No OTP found for this mobile number. Please request a new OTP.' },
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
     // Check expiry
     if (isOTPExpired(session.expiresAt)) {
-      db.otpSessions.delete(mobile);
+      await db.otpSessions.delete(mobile);
       return Response.json(
         { success: false, error: 'OTP has expired. Please request a new one.' },
         { status: 400 }
@@ -57,9 +57,9 @@ export async function POST(request: Request) {
     }
 
     // OTP verified — clean up
-    db.otpSessions.delete(mobile);
+    await db.otpSessions.delete(mobile);
 
-    let user = db.users.findByMobile(mobile);
+    let user = await db.users.findByMobile(mobile);
 
     if (signup) {
       // --- Signup flow ---
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
       // Create user
       const userId = generateId('usr');
-      user = db.users.create({
+      user = await db.users.create({
         id: userId,
         fullName: signup.fullName,
         mobile,
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       });
 
       // Every user gets an Account
-      db.accounts.create({
+      await db.accounts.create({
         id: generateId('acc'),
         name: signup.fullName,
         type: 'personal',
@@ -91,9 +91,9 @@ export async function POST(request: Request) {
 
       // Create role-specific profile
       if (signup.role === 'customer') {
-        db.customerProfiles.create({ userId });
+        await db.customerProfiles.create({ userId });
       } else {
-        db.driverProfiles.create({
+        await db.driverProfiles.create({
           userId,
           vehicleNumber: signup.vehicleNumber || '',
           panNumber: signup.panNumber || '',

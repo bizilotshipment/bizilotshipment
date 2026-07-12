@@ -51,16 +51,19 @@ export async function GET(request: Request) {
 
     // Available shipments: all pending, not assigned to anyone
     // A shipment is assigned if there is an active Assignment for it.
-    const allPending = db.shipments.findMany((s) => s.status === 'pending');
-    const availableShipments = allPending.filter((s) => {
-      const assignments = db.assignments.findByShipmentId(s.id);
-      return !assignments.some(
-        (a) => a.status === 'assigned' || a.status === 'in_progress'
-      );
-    });
+    const allPending = await db.shipments.findMany({ status: 'pending' });
+    
+    // Filter available shipments asynchronously
+    const availableShipments = [];
+    for (const s of allPending) {
+      const assignments = await db.assignments.findByShipmentId(s.id);
+      if (!assignments.some((a) => a.status === 'assigned' || a.status === 'in_progress')) {
+        availableShipments.push(s);
+      }
+    }
 
     // Assignments for this driver
-    const driverAssignments = db.assignments.findByDriverId(payload.userId);
+    const driverAssignments = await db.assignments.findByDriverId(payload.userId);
     const activeAssignments = driverAssignments.filter(
       (a) => a.status === 'assigned' || a.status === 'in_progress'
     );
@@ -69,14 +72,20 @@ export async function GET(request: Request) {
     );
 
     // Active shipments
-    const activeShipments = activeAssignments
-      .map((a) => db.shipments.findById(a.shipmentId))
-      .filter((s): s is Shipment => s !== undefined && ['accepted', 'picked_up', 'out_for_delivery'].includes(s.status));
+    const activeShipmentsRaw = await Promise.all(
+      activeAssignments.map(async (a) => await db.shipments.findById(a.shipmentId))
+    );
+    const activeShipments = activeShipmentsRaw.filter(
+      (s): s is Shipment => s !== null && ['accepted', 'picked_up', 'out_for_delivery'].includes(s.status)
+    );
 
     // Completed shipments
-    const completedShipments = completedAssignments
-      .map((a) => db.shipments.findById(a.shipmentId))
-      .filter((s): s is Shipment => s !== undefined && s.status === 'completed');
+    const completedShipmentsRaw = await Promise.all(
+      completedAssignments.map(async (a) => await db.shipments.findById(a.shipmentId))
+    );
+    const completedShipments = completedShipmentsRaw.filter(
+      (s): s is Shipment => s !== null && s.status === 'completed'
+    );
 
     return Response.json({
       success: true,

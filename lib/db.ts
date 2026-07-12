@@ -1,13 +1,4 @@
-// ============================================================
-// Delivery Platform — File-Backed Data Store
-// ============================================================
-// Stores data in .bizilot-db.json so it survives server restarts.
-// Reads synchronously to prevent stale data across Next.js isolates.
-// ============================================================
-
-import fs from 'fs';
-import path from 'path';
-
+import { PrismaClient } from '@prisma/client';
 import type {
   User,
   CustomerProfile,
@@ -21,194 +12,141 @@ import type {
   OTPSession,
 } from './types';
 
-const DB_FILE = path.join(process.cwd(), '.bizilot-db.json');
-
-// --- Persistence ---
-
-interface DbData {
-  users: Record<string, User>;
-  customerProfiles: Record<string, CustomerProfile>;
-  driverProfiles: Record<string, DriverProfile>;
-  apiClients: Record<string, ApiClient>;
-  accounts: Record<string, Account>;
-  shipments: Record<string, Shipment>;
-  assignments: Record<string, Assignment>;
-  statusHistory: Record<string, StatusHistoryEntry>;
-  webhookLogs: Record<string, WebhookLog>;
-  otpSessions: Record<string, OTPSession>;
-  [key: string]: any;
-}
-
-const defaultData: DbData = {
-  users: {},
-  customerProfiles: {},
-  driverProfiles: {},
-  apiClients: {},
-  accounts: {},
-  shipments: {},
-  assignments: {},
-  statusHistory: {},
-  webhookLogs: {},
-  otpSessions: {},
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
 };
 
-function readData(): DbData {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    }
-  } catch (err) {
-    console.error('Failed to read DB file:', err);
-  }
-  return { ...defaultData };
-}
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-function writeData(data: DbData) {
-  try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error('Failed to write DB file:', err);
-  }
-}
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
-// --- Generic CRUD helpers ---
-
-function createEntity<T>(collectionName: string, entity: T, key: string): T {
-  const data = readData();
-  if (!data[collectionName]) data[collectionName] = {};
-  data[collectionName][key] = entity;
-  writeData(data);
-  return entity;
-}
-
-function findById<T>(collectionName: string, id: string): T | undefined {
-  return readData()[collectionName]?.[id];
-}
-
-function findMany<T>(collectionName: string, predicate?: (item: T) => boolean): T[] {
-  const all = Object.values(readData()[collectionName] || {}) as T[];
-  return predicate ? all.filter(predicate) : all;
-}
-
-function updateEntity<T>(collectionName: string, id: string, updates: Partial<T>): T | undefined {
-  const data = readData();
-  const existing = data[collectionName]?.[id];
-  if (!existing) return undefined;
-  const updated = { ...existing, ...updates };
-  data[collectionName][id] = updated;
-  writeData(data);
-  return updated;
-}
-
-function deleteEntity(collectionName: string, id: string): boolean {
-  const data = readData();
-  if (!data[collectionName]?.[id]) return false;
-  delete data[collectionName][id];
-  writeData(data);
-  return true;
-}
-
-// --- Collections ---
+// Transform logic for Prisma JSON fields and Prisma return types to match our interfaces
+const parseJson = (val: any) => (typeof val === 'string' ? JSON.parse(val) : val);
 
 export const db = {
   // Users
   users: {
-    create: (user: User) => createEntity('users', user, user.id),
-    findById: (id: string) => findById<User>('users', id),
-    findByMobile: (mobile: string) =>
-      findMany<User>('users', (u) => u.mobile === mobile)[0] || null,
-    findMany: (predicate?: (u: User) => boolean) => findMany<User>('users', predicate),
-    update: (id: string, updates: Partial<User>) =>
-      updateEntity<User>('users', id, updates),
-    delete: (id: string) => deleteEntity('users', id),
+    create: async (user: User) => prisma.user.create({ data: user }),
+    findById: async (id: string) => prisma.user.findUnique({ where: { id } }),
+    findByMobile: async (mobile: string) => prisma.user.findUnique({ where: { mobile } }),
+    findMany: async (where?: any) => prisma.user.findMany({ where }),
+    update: async (id: string, data: Partial<User>) => prisma.user.update({ where: { id }, data }),
+    delete: async (id: string) => prisma.user.delete({ where: { id } }),
   },
 
   // Customer Profiles
   customerProfiles: {
-    create: (profile: CustomerProfile) =>
-      createEntity('customerProfiles', profile, profile.userId),
-    findByUserId: (userId: string) => findById<CustomerProfile>('customerProfiles', userId),
+    create: async (profile: CustomerProfile) => prisma.customerProfile.create({ data: profile }),
+    findByUserId: async (userId: string) => prisma.customerProfile.findUnique({ where: { userId } }),
   },
 
   // Driver Profiles
   driverProfiles: {
-    create: (profile: DriverProfile) =>
-      createEntity('driverProfiles', profile, profile.userId),
-    findByUserId: (userId: string) => findById<DriverProfile>('driverProfiles', userId),
-    findMany: (predicate?: (p: DriverProfile) => boolean) =>
-      findMany<DriverProfile>('driverProfiles', predicate),
-    update: (userId: string, updates: Partial<DriverProfile>) =>
-      updateEntity<DriverProfile>('driverProfiles', userId, updates),
+    create: async (profile: DriverProfile) => prisma.driverProfile.create({ data: profile }),
+    findByUserId: async (userId: string) => prisma.driverProfile.findUnique({ where: { userId } }),
+    findMany: async (where?: any) => prisma.driverProfile.findMany({ where }),
+    update: async (userId: string, data: Partial<DriverProfile>) => prisma.driverProfile.update({ where: { userId }, data }),
   },
 
   // API Clients
   apiClients: {
-    create: (client: ApiClient) => createEntity('apiClients', client, client.id),
-    findById: (id: string) => findById<ApiClient>('apiClients', id),
-    findByApiKey: (apiKey: string) =>
-      findMany<ApiClient>('apiClients', (c) => c.apiKey === apiKey)[0] || null,
-    findMany: (predicate?: (c: ApiClient) => boolean) =>
-      findMany<ApiClient>('apiClients', predicate),
-    update: (id: string, updates: Partial<ApiClient>) =>
-      updateEntity<ApiClient>('apiClients', id, updates),
+    create: async (client: ApiClient) => prisma.apiClient.create({ data: client }),
+    findById: async (id: string) => prisma.apiClient.findUnique({ where: { id } }),
+    findByApiKey: async (apiKey: string) => prisma.apiClient.findUnique({ where: { apiKey } }),
+    findMany: async (where?: any) => prisma.apiClient.findMany({ where }),
+    update: async (id: string, data: Partial<ApiClient>) => prisma.apiClient.update({ where: { id }, data }),
   },
 
   // Accounts
   accounts: {
-    create: (account: Account) => createEntity('accounts', account, account.id),
-    findById: (id: string) => findById<Account>('accounts', id),
-    findByUserId: (userId: string) =>
-      findMany<Account>('accounts', (a) => a.userId === userId),
-    findMany: (predicate?: (a: Account) => boolean) =>
-      findMany<Account>('accounts', predicate),
-    update: (id: string, updates: Partial<Account>) =>
-      updateEntity<Account>('accounts', id, updates),
+    create: async (account: Account) => prisma.account.create({ data: account }),
+    findById: async (id: string) => prisma.account.findUnique({ where: { id } }),
+    findByUserId: async (userId: string) => prisma.account.findMany({ where: { userId } }),
+    findMany: async (where?: any) => prisma.account.findMany({ where }),
+    update: async (id: string, data: Partial<Account>) => prisma.account.update({ where: { id }, data }),
   },
 
   // Shipments
   shipments: {
-    create: (shipment: Shipment) => createEntity('shipments', shipment, shipment.id),
-    findById: (id: string) => findById<Shipment>('shipments', id),
-    findMany: (predicate?: (s: Shipment) => boolean) =>
-      findMany<Shipment>('shipments', predicate),
-    update: (id: string, updates: Partial<Shipment>) =>
-      updateEntity<Shipment>('shipments', id, updates),
+    create: async (shipment: Shipment) => {
+      const result = await prisma.shipment.create({
+        data: {
+          ...shipment,
+          pickup: shipment.pickup as any,
+          drops: shipment.drops as any,
+        },
+      });
+      return { ...result, pickup: parseJson(result.pickup), drops: parseJson(result.drops) } as unknown as Shipment;
+    },
+    findById: async (id: string) => {
+      const result = await prisma.shipment.findUnique({ where: { id } });
+      if (!result) return null;
+      return { ...result, pickup: parseJson(result.pickup), drops: parseJson(result.drops) } as unknown as Shipment;
+    },
+    findMany: async (where?: any) => {
+      const results = await prisma.shipment.findMany({ where });
+      return results.map(result => ({
+        ...result,
+        pickup: parseJson(result.pickup),
+        drops: parseJson(result.drops)
+      })) as unknown as Shipment[];
+    },
+    update: async (id: string, data: Partial<Shipment>) => {
+      const result = await prisma.shipment.update({
+        where: { id },
+        data: {
+          ...data,
+          ...(data.pickup && { pickup: data.pickup as any }),
+          ...(data.drops && { drops: data.drops as any }),
+        }
+      });
+      return { ...result, pickup: parseJson(result.pickup), drops: parseJson(result.drops) } as unknown as Shipment;
+    },
   },
 
   // Assignments
   assignments: {
-    create: (assignment: Assignment) => createEntity('assignments', assignment, assignment.id),
-    findById: (id: string) => findById<Assignment>('assignments', id),
-    findByShipmentId: (shipmentId: string) =>
-      findMany<Assignment>('assignments', (a) => a.shipmentId === shipmentId),
-    findByDriverId: (driverId: string) =>
-      findMany<Assignment>('assignments', (a) => a.driverId === driverId),
-    update: (id: string, updates: Partial<Assignment>) =>
-      updateEntity<Assignment>('assignments', id, updates),
+    create: async (assignment: Assignment) => prisma.assignment.create({ data: assignment }),
+    findById: async (id: string) => prisma.assignment.findUnique({ where: { id } }),
+    findByShipmentId: async (shipmentId: string) => prisma.assignment.findMany({ where: { shipmentId } }),
+    findByDriverId: async (driverId: string) => prisma.assignment.findMany({ where: { driverId } }),
+    update: async (id: string, data: Partial<Assignment>) => prisma.assignment.update({ where: { id }, data }),
   },
 
   // Status History
   statusHistory: {
-    create: (entry: StatusHistoryEntry) =>
-      createEntity('statusHistory', entry, entry.id),
-    findByShipmentId: (shipmentId: string) =>
-      findMany<StatusHistoryEntry>('statusHistory', (s) => s.shipmentId === shipmentId),
+    create: async (entry: StatusHistoryEntry) => prisma.statusHistory.create({ data: entry }),
+    findByShipmentId: async (shipmentId: string) => prisma.statusHistory.findMany({ where: { shipmentId } }),
   },
 
   // Webhook Logs
   webhookLogs: {
-    create: (log: WebhookLog) => createEntity('webhookLogs', log, log.id),
-    findByApiClientId: (apiClientId: string) =>
-      findMany<WebhookLog>('webhookLogs', (l) => l.apiClientId === apiClientId),
-    findByShipmentId: (shipmentId: string) =>
-      findMany<WebhookLog>('webhookLogs', (l) => l.shipmentId === shipmentId),
+    create: async (log: WebhookLog) => prisma.webhookLog.create({ 
+      data: {
+        ...log,
+        responseStatus: log.statusCode, // Prisma schema name difference
+        payload: log.payload as any,
+        createdAt: new Date(log.sentAt)
+      } 
+    }),
+    findByApiClientId: async (apiClientId: string) => prisma.webhookLog.findMany({ where: { apiClientId } }),
   },
 
   // OTP Sessions
   otpSessions: {
-    create: (session: OTPSession) =>
-      createEntity('otpSessions', session, session.mobile),
-    findByMobile: (mobile: string) => findById<OTPSession>('otpSessions', mobile),
-    delete: (mobile: string) => deleteEntity('otpSessions', mobile),
+    create: async (session: OTPSession) => prisma.otpSession.create({ 
+      data: {
+        mobile: session.mobile,
+        otp: session.otp,
+        expiresAt: new Date(session.expiresAt),
+        verified: session.verified
+      } 
+    }),
+    findByMobile: async (mobile: string) => {
+      const res = await prisma.otpSession.findUnique({ where: { mobile } });
+      if (!res) return null;
+      return { ...res, expiresAt: res.expiresAt.toISOString() } as OTPSession;
+    },
+    delete: async (mobile: string) => prisma.otpSession.delete({ where: { mobile } }),
   },
 };

@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id
+  fullName  String
+  mobile    String   @unique
+  role      String   // "customer" | "driver"
+  createdAt DateTime @default(now())
+}
+
+model CustomerProfile {
+  userId String @id
+}
+
+model DriverProfile {
+  userId        String @id
+  vehicleNumber String
+  panNumber     String
+  aadharNumber  String
+  status        String // "available" | "busy" | "offline"
+}
+
+model ApiClient {
+  id            String    @id
+  name          String
+  accountId     String
+  apiKey        String    @unique
+  status        String    // "active" | "suspended"
+  rateLimit     Int
+  webhookUrl    String?
+  webhookEvents String[]
+  contactMobile String
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime?
+}
+
+model Account {
+  id        String   @id
+  name      String
+  type      String   // "personal" | "business" | "integration"
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
+model Shipment {
+  id             String   @id
+  trackingNumber String   @unique
+  accountId      String
+  apiClientId    String?
+  status         String
+  pickupOtp      String?
+  pickup         Json
+  drops          Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Assignment {
+  id         String   @id
+  shipmentId String
+  driverId   String
+  status     String   // "assigned" | "in_progress" | "completed" | "cancelled"
+  assignedAt DateTime @default(now())
+}
+
+model StatusHistory {
+  id         String   @id
+  shipmentId String
+  fromStatus String?
+  toStatus   String
+  changedBy  String
+  changedAt  DateTime @default(now())
+}
+
+model WebhookLog {
+  id             String   @id
+  apiClientId    String
+  shipmentId     String
+  event          String
+  endpoint       String
+  payload        Json
+  responseStatus Int?
+  createdAt      DateTime @default(now())
+}
+
+model OtpSession {
+  mobile    String   @id
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+}
