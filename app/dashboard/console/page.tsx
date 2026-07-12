@@ -155,9 +155,15 @@ function ShipmentsView() {
                 Created on {new Date(s.createdAt).toLocaleDateString()}
               </p>
             </div>
-            
-            <div className="text-right text-xs font-medium text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-lg">
-              {s.dropsCount} Drop{s.dropsCount > 1 ? 's' : ''}
+            <div className="text-right">
+              <div className="text-xs font-medium text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-lg mb-1 inline-block">
+                {s.dropsCount} Drop{s.dropsCount > 1 ? 's' : ''}
+              </div>
+              {s.status === 'accepted' && s.pickupOtp && (
+                <div className="text-xs bg-brand-500/10 text-brand-400 px-2 py-1 rounded font-mono border border-brand-500/30">
+                  OTP: {s.pickupOtp}
+                </div>
+              )}
             </div>
           </div>
 
@@ -177,8 +183,12 @@ function ShipmentsView() {
       {selectedShipment && (
         <ShipmentDetailsModal 
           shipment={selectedShipment} 
+          role="customer"
           onClose={() => setSelectedShipment(null)} 
-          // onEdit could be implemented later by passing shipment to create view
+          onEdit={selectedShipment?.status === 'pending' ? () => {
+            // Placeholder for editing logic
+            setSelectedShipment(null);
+          } : undefined}
         />
       )}
     </div>

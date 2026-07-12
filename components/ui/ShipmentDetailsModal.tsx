@@ -5,7 +5,7 @@ import { MapPin, Package, Phone, Map, X, Clock, Navigation, CheckCircle, AlertTr
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
-export function ShipmentDetailsModal({ shipment, onClose, onEdit }: { shipment: any; onClose: () => void; onEdit?: () => void }) {
+export function ShipmentDetailsModal({ shipment, role, onClose, onEdit }: { shipment: any; role: 'customer' | 'driver'; onClose: () => void; onEdit?: () => void }) {
   if (!shipment) return null;
 
   const isPending = shipment.status === 'pending';
@@ -30,7 +30,7 @@ export function ShipmentDetailsModal({ shipment, onClose, onEdit }: { shipment: 
               }`}>
                 {shipment.status.replace('_', ' ')}
               </span>
-              {shipment.pickupOtp && (
+              {role === 'customer' && shipment.pickupOtp && (
                 <span className="text-xs bg-slate-800 text-brand-400 px-2 py-0.5 rounded-md font-mono border border-brand-500/30">
                   OTP: {shipment.pickupOtp}
                 </span>
@@ -88,7 +88,7 @@ export function ShipmentDetailsModal({ shipment, onClose, onEdit }: { shipment: 
                           <AlertTriangle className="w-3 h-3" /> {drop.status}
                         </span>
                       ) : (
-                        drop.dropOtp && (
+                        role === 'customer' && drop.dropOtp && (
                           <span className="text-[10px] bg-slate-800 text-brand-400 px-1.5 py-0.5 rounded font-mono border border-brand-500/30">
                             OTP: {drop.dropOtp}
                           </span>

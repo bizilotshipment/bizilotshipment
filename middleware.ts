@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes — pass through
@@ -55,12 +55,17 @@ export async function proxy(request: NextRequest) {
       return response;
     }
 
+    // Route to correct dashboard if hitting the base path
+    if (pathname === '/dashboard') {
+      return NextResponse.redirect(new URL(payload.role === 'customer' ? '/dashboard/console' : '/dashboard/driver', request.url));
+    }
+
     // Role-based route protection
-    if (pathname.startsWith('/dashboard/customer') && payload.role !== 'customer') {
+    if (pathname.startsWith('/dashboard/console') && payload.role !== 'customer') {
       return NextResponse.redirect(new URL('/dashboard/driver', request.url));
     }
     if (pathname.startsWith('/dashboard/driver') && payload.role !== 'driver') {
-      return NextResponse.redirect(new URL('/dashboard/customer', request.url));
+      return NextResponse.redirect(new URL('/dashboard/console', request.url));
     }
 
     return NextResponse.next();
